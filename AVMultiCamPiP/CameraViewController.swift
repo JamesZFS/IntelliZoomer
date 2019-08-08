@@ -232,6 +232,8 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 		}
 		
 		CATransaction.commit()
+		UIView.setAnimationsEnabled(true)
+		CATransaction.setDisableActions(false)
 	}
 	
 	private func updateNormalizedPiPFrame() {
