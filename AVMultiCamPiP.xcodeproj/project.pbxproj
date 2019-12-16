@@ -25,7 +25,7 @@
 		1A17824923A771DC00E9A4EA /* RingQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RingQueue.swift; sourceTree = "<group>"; };
 		26584C1C2282323E00ADA373 /* MovieRecorder.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MovieRecorder.swift; sourceTree = "<group>"; };
 		2673E419227D0AB7008DB6F7 /* Utilities.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Utilities.swift; sourceTree = "<group>"; };
-		42E159DE227A481B00F81016 /* AVMultiCamPiP.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AVMultiCamPiP.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		42E159DE227A481B00F81016 /* Intelli Zoomer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Intelli Zoomer.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		42E159E1227A481B00F81016 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		42E159E3227A481B00F81016 /* CameraViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraViewController.swift; sourceTree = "<group>"; };
 		42E159E6227A481B00F81016 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
@@ -63,7 +63,7 @@
 		42E159DF227A481B00F81016 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				42E159DE227A481B00F81016 /* AVMultiCamPiP.app */,
+				42E159DE227A481B00F81016 /* Intelli Zoomer.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -119,7 +119,7 @@
 			);
 			name = AVMultiCamPiP;
 			productName = AVMultiCamPiP;
-			productReference = 42E159DE227A481B00F81016 /* AVMultiCamPiP.app */;
+			productReference = 42E159DE227A481B00F81016 /* Intelli Zoomer.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -342,7 +342,7 @@
 					"@executable_path/Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.example.apple-samplecode.AVMultiCamPiP${SAMPLE_CODE_DISAMBIGUATOR}";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = "Intelli Zoomer";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -365,7 +365,7 @@
 					"@executable_path/Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.example.apple-samplecode.AVMultiCamPiP${SAMPLE_CODE_DISAMBIGUATOR}";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = "Intelli Zoomer";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";

@@ -10,7 +10,7 @@ import AVFoundation
 import Photos
 import Vision
 
-class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDelegate, AVCaptureVideoDataOutputSampleBufferDelegate {
+class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDelegate, AVCaptureVideoDataOutputSampleBufferDelegate, AVCapturePhotoCaptureDelegate {
 	
 	// MARK: View Controller Life Cycle
 	
@@ -275,14 +275,14 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 	private let sessionQueue = DispatchQueue(label: "session queue") // Communicate with the session and other session objects on this queue.
 	
 	private let dataOutputQueue = DispatchQueue(label: "data output queue")
-    
-//    private let dataOutputQueue2 = DispatchQueue(label: "data output queue2") // TODO: ??
-	
+    	
 	private var setupResult: SessionSetupResult = .success
 	
 	@objc dynamic private(set) var backCameraDeviceInput: AVCaptureDeviceInput?
 	
 	private let backCameraVideoDataOutput = AVCaptureVideoDataOutput()
+    
+    private let backCameraPhotoOutput = AVCapturePhotoOutput()
 	
 	@IBOutlet private var backCameraVideoPreviewView: PreviewView!
 	
@@ -388,6 +388,22 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 		}
 		session.addConnection(backCameraVideoDataOutputConnection)
 		backCameraVideoDataOutputConnection.videoOrientation = .portrait
+        
+        // Add the back camera photo output
+        guard session.canAddOutput(backCameraPhotoOutput) else {
+            print("Could not add the back camera photo output")
+            return false
+        }
+        session.addOutputWithNoConnections(backCameraPhotoOutput)
+        
+        // Connect the back camera device input to the back camera photo output
+        let backCameraPhotoOutputConnection = AVCaptureConnection(inputPorts: [backCameraVideoPort], output: backCameraPhotoOutput)
+        guard session.canAddConnection(backCameraPhotoOutputConnection) else {
+            print("Could not add a connection to the back camera photo output")
+            return false
+        }
+        session.addConnection(backCameraPhotoOutputConnection)
+        backCameraPhotoOutputConnection.videoOrientation = .portrait
 
 		// Connect the back camera device input to the back camera video preview layer
 		guard let backCameraVideoPreviewLayer = backCameraVideoPreviewLayer else {
@@ -790,6 +806,28 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 			}
 		}
 	}
+        
+    // MARK: Take a photo
+    @IBAction func onCapture(_ sender: Any) {
+        let settings = AVCapturePhotoSettings()
+        settings.embedsDepthDataInPhoto = false
+        settings.flashMode = .off
+        backCameraPhotoOutput.capturePhoto(with: settings, delegate: self)
+    }
+    
+    public func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
+        guard let data = photo.fileDataRepresentation() else {
+            print("Cannot get photo file data representation")
+            return
+        }
+        guard let image = UIImage(data: data) else {
+            print("Cannot get UIImage from data")
+            return
+        }
+        print("trying to save to library")
+        UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
+    }
+    
                         	
     // MARK: Delegated by video/audio output
 	func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
@@ -863,6 +901,7 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
             currentDistance = nil
             DispatchQueue.main.async {
                 self.distView.text! = "Error"
+                self.calDistView.text! = ""
             }
             return
         }
@@ -872,6 +911,7 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
             }
             if results.count == 0 {
                 self.distView.text! = "No face"
+                self.calDistView.text! = ""
                 self.currentDistance = nil
                 return
             }
