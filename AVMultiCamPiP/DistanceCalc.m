@@ -37,7 +37,7 @@
     }
     
     avgDepth /= (y_hi - y_lo) * (x_hi - x_lo);
-    printf("avgDepth %f cm\n", 100 * avgDepth);
+//    printf("avgDepth %f cm\n", 100 * avgDepth);
     CVPixelBufferUnlockBaseAddress(depthBuffer, kCVPixelBufferLock_ReadOnly);
     return avgDepth;
 }

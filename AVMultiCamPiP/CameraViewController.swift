@@ -8,6 +8,7 @@ Implements the view controller for the camera interface.
 import UIKit
 import AVFoundation
 import Photos
+import Vision
 
 class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDelegate, AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptureDepthDataOutputDelegate {
 	
@@ -286,6 +287,8 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 	@IBOutlet private var backCameraVideoPreviewView: PreviewView!
 	
 	private weak var backCameraVideoPreviewLayer: AVCaptureVideoPreviewLayer?
+    
+    private let frontCameraVideoDataOutput = AVCaptureVideoDataOutput()
 	
 	private var frontCameraDeviceInput: AVCaptureDeviceInput?
 	    
@@ -473,6 +476,32 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 			print("Could not add a connection to the front camera video preview layer")
 			return false
 		}
+        
+        // Add the front camera video data output
+        guard session.canAddOutput(frontCameraVideoDataOutput) else {
+            print("Could not add the front camera video data output")
+            return false
+        }
+        session.addOutputWithNoConnections(frontCameraVideoDataOutput)
+        frontCameraVideoDataOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_32BGRA)]
+        frontCameraVideoDataOutput.setSampleBufferDelegate(self, queue: dataOutputQueue)
+        
+        // Connect the front camera device input to the front camera video data output
+        let frontCameraVideoDataOutputConnection = AVCaptureConnection(inputPorts: [frontCameraVideoPort], output: frontCameraVideoDataOutput)
+        guard session.canAddConnection(frontCameraVideoDataOutputConnection) else {
+            print("Could not add a connection to the front camera video data output")
+            return false
+        }
+        session.addConnection(frontCameraVideoDataOutputConnection)
+        frontCameraVideoDataOutputConnection.videoOrientation = .portrait
+        frontCameraVideoDataOutputConnection.automaticallyAdjustsVideoMirroring = false
+        frontCameraVideoDataOutputConnection.isVideoMirrored = true
+
+        // Connect the back camera device input to the back camera video preview layer
+        guard let backCameraVideoPreviewLayer = backCameraVideoPreviewLayer else {
+            return false
+        }
+        
 		session.addConnection(frontCameraVideoPreviewLayerConnection)
 		frontCameraVideoPreviewLayerConnection.automaticallyAdjustsVideoMirroring = false
 		frontCameraVideoPreviewLayerConnection.isVideoMirrored = true
@@ -824,9 +853,9 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 //        print("receive depthDataOutput: \(depthData)")
         let buffer = depthData.depthDataMap
         let dist = DistanceCalc.calcDistance(forDepthBuffer: buffer, minDepth: 0.0, maxDepth: 5.0)
-        DispatchQueue.main.async { // Correct
-            self.depthTextView.text! = String(format: "%.1f cm", dist * 100)
-        }
+//        DispatchQueue.main.async { // Correct
+//            self.depthTextView.text! = String(format: "%.1f cm", dist * 100)
+//        }
     }
 	
     // MARK: Delegated by video/audio output
@@ -838,20 +867,71 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 		}
 	}
 	
+    lazy var faceDetectionRequest = VNDetectFaceRectanglesRequest(completionHandler: self.handleDetectedFaces)
+    
+//    private func boundingBox(forRegionOfInterest: CGRect) -> CGRect {
+//        var rect = forRegionOfInterest
+//
+//        let imageWidth = CGFloat(width)
+//        let imageHeight = CGFloat(height)
+//
+//        rect.origin.x *= imageWidth
+//        rect.origin.y = (1 - rect.origin.y) * imageHeight
+//
+//        rect.size.width *= imageWidth
+//        rect.size.height *= imageHeight
+//
+//        return rect
+//    }
+    
+    fileprivate func handleDetectedFaces(request: VNRequest?, error: Error?) {
+        if let nsError = error as NSError? {
+            print("Face Detection Error")
+            return
+        }
+        DispatchQueue.main.async {
+            guard let results = request?.results as? [VNFaceObservation] else {
+                return
+            }
+            if(results.count == 0) {
+                self.depthTextView.text! = "No face"
+                return
+            }
+            for observation in results {
+                self.depthTextView.text! = String(format: "%.2f", observation.boundingBox.size.width * observation.boundingBox.size.height)
+            }
+        }
+    }
+    
+    fileprivate func performVisionRequest(pixelBuffer: CVPixelBuffer) {
+        print("Prepare to detect face")
+        let imageRequestHandler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, options: [:])
+        DispatchQueue.global(qos: .userInitiated).async {
+            do {
+                try imageRequestHandler.perform([self.faceDetectionRequest])
+            } catch let error as NSError {
+                print("Failed to perform image request: \(error)")
+                return
+            }
+        }
+    }
+    
 	private func processVideoSampleBuffer(_ sampleBuffer: CMSampleBuffer, fromOutput videoDataOutput: AVCaptureVideoDataOutput) {
 		if videoTrackSourceFormatDescription == nil {
 			videoTrackSourceFormatDescription = CMSampleBufferGetFormatDescription( sampleBuffer )
 		}
-        guard videoDataOutput == self.backCameraVideoDataOutput else {
-            // Ignoring video sample buffer
-            return
-        }
+//        guard videoDataOutput == self.backCameraVideoDataOutput else {
+//            // Ignoring video sample buffer
+//            return
+//        }
         guard renderingEnabled else {
             return
         }
         guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
             return
         }
+        
+        performVisionRequest(pixelBuffer: pixelBuffer)
         
         // If we're recording, append this buffer to the movie
         if let recorder = movieRecorder,
