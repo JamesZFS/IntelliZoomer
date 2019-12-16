@@ -18,13 +18,42 @@
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="WOD-qV-bPs" customClass="PreviewView" customModule="AVMultiCamPiP" customModuleProvider="target">
                                 <rect key="frame" x="0.0" y="85" width="414" height="736"/>
                                 <subviews>
+                                    <textField opaque="NO" contentMode="scaleToFill" fixedFrame="YES" enabled="NO" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" textAlignment="center" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="50J-at-4FE" userLabel="Dist View">
+                                        <rect key="frame" x="42" y="538" width="90" height="34"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                        <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                                        <textInputTraits key="textInputTraits"/>
+                                    </textField>
+                                    <textField opaque="NO" contentMode="scaleToFill" fixedFrame="YES" enabled="NO" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" textAlignment="center" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="ndJ-HC-XvD" userLabel="CalDist View">
+                                        <rect key="frame" x="42" y="588" width="90" height="34"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                        <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                                        <textInputTraits key="textInputTraits"/>
+                                    </textField>
                                     <slider opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="0.5" minValue="0.0" maxValue="1" translatesAutoresizingMaskIntoConstraints="NO" id="W82-eD-6PD">
-                                        <rect key="frame" x="148" y="620" width="118" height="30"/>
+                                        <rect key="frame" x="147" y="640" width="120" height="30"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                         <connections>
-                                            <action selector="handleSlider:" destination="BYZ-38-t0r" eventType="valueChanged" id="pin-Fs-4qH"/>
+                                            <action selector="onSliderDrag:" destination="BYZ-38-t0r" eventType="touchDragInside" id="Fc6-Xh-8Pa"/>
                                         </connections>
                                     </slider>
+                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="dx3-tb-Wzv">
+                                        <rect key="frame" x="47" y="494" width="80" height="36"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                        <color key="backgroundColor" white="0.0" alpha="0.29999999999999999" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        <fontDescription key="fontDescription" type="system" pointSize="20"/>
+                                        <state key="normal" title="Calibrate">
+                                            <color key="titleColor" red="1" green="1" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                        </state>
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
+                                                <integer key="value" value="4"/>
+                                            </userDefinedRuntimeAttribute>
+                                        </userDefinedRuntimeAttributes>
+                                        <connections>
+                                            <action selector="onCalibrate:" destination="BYZ-38-t0r" eventType="touchUpInside" id="qma-z5-JZc"/>
+                                        </connections>
+                                    </button>
                                 </subviews>
                                 <constraints>
                                     <constraint firstAttribute="height" secondItem="WOD-qV-bPs" secondAttribute="width" multiplier="16:9" id="hFe-b4-Urr"/>
@@ -80,12 +109,10 @@
                                     <action selector="resumeInterruptedSession:" destination="BYZ-38-t0r" eventType="touchUpInside" id="aDQ-Gk-zmz"/>
                                 </connections>
                             </button>
-                            <textField opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="left" contentVerticalAlignment="center" text="text" borderStyle="roundedRect" textAlignment="center" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="vGR-2b-vj1">
-                                <rect key="frame" x="159" y="638" width="97" height="34"/>
+                            <switch opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" on="YES" translatesAutoresizingMaskIntoConstraints="NO" id="elZ-aT-jdu" userLabel="Auto Zoom Switch">
+                                <rect key="frame" x="319" y="35" width="49" height="31"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="14"/>
-                                <textInputTraits key="textInputTraits"/>
-                            </textField>
+                            </switch>
                         </subviews>
                         <color key="backgroundColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <constraints>
@@ -132,13 +159,15 @@
                         </variation>
                     </view>
                     <connections>
+                        <outlet property="autoZoomSwitch" destination="elZ-aT-jdu" id="VNJ-Y4-Pvh"/>
                         <outlet property="backCameraVideoPreviewView" destination="WOD-qV-bPs" id="ra6-Ok-khD"/>
+                        <outlet property="calDistView" destination="ndJ-HC-XvD" id="8se-fl-ARO"/>
                         <outlet property="cameraUnavailableLabel" destination="MNA-vj-IrB" id="DHr-gt-WAW"/>
+                        <outlet property="distView" destination="50J-at-4FE" id="XBY-i4-CyE"/>
                         <outlet property="frontCameraVideoPreviewView" destination="iLU-Vt-ZWG" id="b2V-KG-PHW"/>
                         <outlet property="recordButton" destination="SLg-cy-w81" id="VQn-Ok-V1i"/>
                         <outlet property="resumeButton" destination="Wvi-Ng-fni" id="brr-go-csn"/>
                         <outlet property="slider" destination="W82-eD-6PD" id="iUk-vp-7ka"/>
-                        <outlet property="textView" destination="vGR-2b-vj1" id="wjN-Lv-7QZ"/>
                         <outletCollection property="frontCameraPiPConstraints" destination="2gD-HS-Mqz" collectionClass="NSMutableArray" id="hkP-yg-Awn"/>
                         <outletCollection property="frontCameraPiPConstraints" destination="7Ap-XQ-8gM" collectionClass="NSMutableArray" id="2cM-la-TUw"/>
                         <outletCollection property="frontCameraPiPConstraints" destination="GLN-Xd-Uyd" collectionClass="NSMutableArray" id="PNW-KC-taZ"/>

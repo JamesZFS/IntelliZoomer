@@ -200,3 +200,7 @@ private func preallocateBuffers(pool: CVPixelBufferPool, allocationThreshold: In
 func lerp(_ t: Float, lower: Float, upper: Float) -> Float {
     return lower * (1 - t) + upper * t
 }
+
+func clamp(_ x: Float) -> Float {
+    return x < 0 ? 0 : x > 1 ? 1 : x
+}

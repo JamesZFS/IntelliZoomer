@@ -790,11 +790,7 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 			}
 		}
 	}
-    
-    @IBOutlet weak var textView: UITextField!
-    
-    private var zoomRatioTemporalWindow = RingQueue<Float>.init(repeating: (minDist + maxDist) / 2, capacity: 10)
-                	
+                        	
     // MARK: Delegated by video/audio output
 	func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
 		if let videoDataOutput = output as? AVCaptureVideoDataOutput {
@@ -839,13 +835,34 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
         }
     }
     
-    lazy var faceDetectionRequest = VNDetectFaceRectanglesRequest(completionHandler: self.handleDetectedFaces)
+    private lazy var faceDetectionRequest = VNDetectFaceRectanglesRequest(completionHandler: self.handleDetectedFaces)
+    
+    private var calibrationFactor: CGFloat = 1
+    
+    private var currentDistance: CGFloat?
+    
+    @IBOutlet weak var distView: UITextField!
+    @IBOutlet weak var calDistView: UITextField!
+    
+    private var zoomRatioTemporalWindow = RingQueue<Float>.init(repeating: (minZoom + maxZoom) / 2, capacity: 10)
+    
+    
+    @IBOutlet weak var autoZoomSwitch: UISwitch!
+        
+    @IBAction func onCalibrate(_ sender: Any) {
+        // set calibrationFactor to make calDist ranging from 1 to 7
+        guard let distance = currentDistance else {
+            return
+        }
+        calibrationFactor = 1.0 / distance
+    }
     
     private func handleDetectedFaces(request: VNRequest?, error: Error?) {
         if let nsError = error as NSError? {
             print("Face Detection Error: \(nsError)")
+            currentDistance = nil
             DispatchQueue.main.async {
-                self.textView.text! = "Error"
+                self.distView.text! = "Error"
             }
             return
         }
@@ -854,7 +871,8 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
                 return
             }
             if results.count == 0 {
-                self.textView.text! = "No face"
+                self.distView.text! = "No face"
+                self.currentDistance = nil
                 return
             }
             let observation = results.max(by: {ob1, ob2 in  // select the largest face
@@ -863,29 +881,29 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
             let size = observation.boundingBox.size.width * observation.boundingBox.size.height
             // MARK: map face size to zoom ratio
             let distance = 1 / size
-            self.textView.text! = String(format: "%.2f", distance)
-//            for observation in results {
-//
-//                self.textView.text! = String(format: "%.2f", observation.boundingBox.size.width * observation.boundingBox.size.height)
-//            }
+            self.currentDistance = distance
+            self.distView.text! = String(format: "di: %.2f", distance)
+            
+            // calibrated distance should range from 1 to 7
+            let calDist = Float(self.calibrationFactor * distance)
+            self.calDistView.text! = String(format: "cd: %.1f", calDist)
+            self.zoomRatioTemporalWindow.push(lerp(clamp((calDist - 1.0) / 6.0), lower: minZoom, upper: maxZoom))
+            
+            if self.autoZoomSwitch.isOn {
+                self.zoom = self.zoomRatioTemporalWindow.sum / Float(self.zoomRatioTemporalWindow.capacity)
+            }
         }
     }
     
-    private var visionCompCounter: Int = 0
 
     private func performVisionRequest(pixelBuffer: CVPixelBuffer) {
-        visionCompCounter += 1
-        if visionCompCounter == 10 { // periodically detect face
-            visionCompCounter = 0
-            print("Prepare to detect face")
-            let imageRequestHandler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, options: [:])
-            DispatchQueue.global(qos: .userInitiated).async {
-                do {
-                    try imageRequestHandler.perform([self.faceDetectionRequest])  // MARK: perform face detection computation
-                } catch let error as NSError {
-                    print("Failed to perform image request: \(error)")
-                    return
-                }
+        let imageRequestHandler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, options: [:])
+        DispatchQueue.global(qos: .userInitiated).async {
+            do {
+                try imageRequestHandler.perform([self.faceDetectionRequest])  // MARK: perform face detection computation
+            } catch let error as NSError {
+                print("Failed to perform image request: \(error)")
+                return
             }
         }
     }
@@ -1194,9 +1212,8 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
     // MARK: back camera zooming demo
     @IBOutlet weak var slider: UISlider!
     
-    @IBAction func handleSlider(_ sender: Any) {
-//        print("sliding: \(slider.value)")
-        self.zoom = lerp(slider.value, lower: minZoom, upper: maxZoom) // range [1.0, 5.0]
+    @IBAction func onSliderDrag(_ sender: Any) {
+        self.zoom = lerp(slider.value, lower: minZoom, upper: maxZoom)
     }
     
     @objc public var zoom: Float = minZoom {
@@ -1215,6 +1232,7 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
                 print("change videoZoomFactor into \(zoom)")
                 device.videoZoomFactor = CGFloat(zoom)
                 device.unlockForConfiguration()
+                slider.setValue(lerp((zoom - minZoom) / (maxZoom - minZoom), lower: 0.0, upper: 1.0), animated: true)
             } catch {
                 print("error encoutered in zooming, \(error)")
             }
