@@ -388,16 +388,16 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 //		session.addConnection(backCameraVideoDataOutputConnection)
 //		backCameraVideoDataOutputConnection.videoOrientation = .portrait
 //
-//		// Connect the back camera device input to the back camera video preview layer
-//		guard let backCameraVideoPreviewLayer = backCameraVideoPreviewLayer else {
-//			return false
-//		}
-//		let backCameraVideoPreviewLayerConnection = AVCaptureConnection(inputPort: backCameraVideoPort, videoPreviewLayer: backCameraVideoPreviewLayer)
-//		guard session.canAddConnection(backCameraVideoPreviewLayerConnection) else {
-//			print("Could not add a connection to the back camera video preview layer")
-//			return false
-//		}
-//		session.addConnection(backCameraVideoPreviewLayerConnection)
+		// Connect the back camera device input to the back camera video preview layer
+		guard let backCameraVideoPreviewLayer = backCameraVideoPreviewLayer else {
+			return false
+		}
+		let backCameraVideoPreviewLayerConnection = AVCaptureConnection(inputPort: backCameraVideoPort, videoPreviewLayer: backCameraVideoPreviewLayer)
+		guard session.canAddConnection(backCameraVideoPreviewLayerConnection) else {
+			print("Could not add a connection to the back camera video preview layer")
+			return false
+		}
+		session.addConnection(backCameraVideoPreviewLayerConnection)
 		
 		return true
 	}
@@ -814,7 +814,7 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 	}
     
     @IBOutlet weak var depthTextView: UITextField!
-        
+            
     // MARK: Delegated by depth output
     func depthDataOutput(_ output: AVCaptureDepthDataOutput, didOutput depthData: AVDepthData, timestamp: CMTime, connection: AVCaptureConnection) {
         guard (output == frontCameraDepthDataOutput) else {
@@ -823,12 +823,14 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
         }
 //        print("receive depthDataOutput: \(depthData)")
         let buffer = depthData.depthDataMap
-        let dist = DistanceCalc.calcDistance(forDepthBuffer: buffer, minDepth: 0.0, maxDepth: 5.0)
-        DispatchQueue.main.async { // Correct
+        let dist = DistanceCalc.calcDistance(forDepthBuffer: buffer, minDepth: minDist, maxDepth: maxDist)
+        let ratio = (dist - minDist) / (maxDist - minDist)
+        DispatchQueue.main.async {
             self.depthTextView.text! = String(format: "%.1f cm", dist * 100)
+            self.zoom = lerp(ratio, lower: minZoom, upper: maxZoom)
         }
     }
-	
+    	
     // MARK: Delegated by video/audio output
 	func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
 		if let videoDataOutput = output as? AVCaptureVideoDataOutput {
@@ -1170,11 +1172,15 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
     
     @IBAction func handleSlider(_ sender: Any) {
 //        print("sliding: \(slider.value)")
-        self.zoom = Double(1.0 + slider.value * 4.0) // range [1.0, 5.0]
+        self.zoom = lerp(slider.value, lower: minZoom, upper: maxZoom) // range [1.0, 5.0]
     }
     
-    @objc public var zoom: Double = 1.0 {
+    @objc public var zoom: Float = minZoom {
         didSet { // will be triggered after setting self.zoom
+            guard minZoom <= zoom && zoom <= maxZoom else {
+                print("invalid zoom factor: \(zoom)")
+                return
+            }
             guard let device = self.backCameraDeviceInput?.device else {
                 print("zoom: no backCameraDeviceInput found!")
                 return
@@ -1182,8 +1188,8 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
             
             do {
                 try device.lockForConfiguration()
-                print("change videoZoomFactor into \(self.zoom)")
-                device.videoZoomFactor = CGFloat(self.zoom)
+                print("change videoZoomFactor into \(zoom)")
+                device.videoZoomFactor = CGFloat(zoom)
                 device.unlockForConfiguration()
             } catch {
                 print("error encoutered in zooming, \(error)")
