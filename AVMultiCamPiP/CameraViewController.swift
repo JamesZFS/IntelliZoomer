@@ -274,8 +274,10 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 	private let sessionQueue = DispatchQueue(label: "session queue") // Communicate with the session and other session objects on this queue.
 	
 	private let dataOutputQueue = DispatchQueue(label: "data output queue")
-    
-//    private let dataOutputQueue2 = DispatchQueue(label: "data output queue2") // TODO: ??
+    private let videoDataOutput = AVCaptureVideoDataOutput()
+    private var outputSynchronizer: AVCaptureDataOutputSynchronizer?
+
+    private let depthQueue = DispatchQueue(label: "video data queue", qos: .userInitiated, attributes: [], autoreleaseFrequency: .workItem)
 	
 	private var setupResult: SessionSetupResult = .success
 	
@@ -317,16 +319,16 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 				checkSystemCost()
 			}
 		}
+        guard configureFrontCamera() else {
+            setupResult = .configurationFailed
+            return
+        }
 
-		guard configureBackCamera() else {
-			setupResult = .configurationFailed
-			return
-		}
-		
-		guard configureFrontCamera() else {
-			setupResult = .configurationFailed
-			return
-		}
+        guard configureBackCamera() else {
+            setupResult = .configurationFailed
+            return
+        }
+        
 		
 		guard configureMicrophone() else {
 			setupResult = .configurationFailed
@@ -341,7 +343,7 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 		}
 		
 		// MARK: Find the back camera
-		guard let backCamera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else {
+		guard let backCamera = AVCaptureDevice.default(.builtInTelephotoCamera, for: .video, position: .back) else {
 			print("Could not find the back camera")
 			return false
 		}
@@ -371,23 +373,23 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 		}
 //
 //		// Add the back camera video data output
-//		guard session.canAddOutput(backCameraVideoDataOutput) else {
-//			print("Could not add the back camera video data output")
-//			return false
-//		}
-//		session.addOutputWithNoConnections(backCameraVideoDataOutput)
-//		backCameraVideoDataOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_32BGRA)]
-//		backCameraVideoDataOutput.setSampleBufferDelegate(self, queue: dataOutputQueue)
-//
-//		// Connect the back camera device input to the back camera video data output
-//		let backCameraVideoDataOutputConnection = AVCaptureConnection(inputPorts: [backCameraVideoPort], output: backCameraVideoDataOutput)
-//		guard session.canAddConnection(backCameraVideoDataOutputConnection) else {
-//			print("Could not add a connection to the back camera video data output")
-//			return false
-//		}
-//		session.addConnection(backCameraVideoDataOutputConnection)
-//		backCameraVideoDataOutputConnection.videoOrientation = .portrait
-//
+		guard session.canAddOutput(backCameraVideoDataOutput) else {
+			print("Could not add the back camera video data output")
+			return false
+		}
+		session.addOutputWithNoConnections(backCameraVideoDataOutput)
+		backCameraVideoDataOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_32BGRA)]
+		backCameraVideoDataOutput.setSampleBufferDelegate(self, queue: dataOutputQueue)
+
+		// Connect the back camera device input to the back camera video data output
+		let backCameraVideoDataOutputConnection = AVCaptureConnection(inputPorts: [backCameraVideoPort], output: backCameraVideoDataOutput)
+		guard session.canAddConnection(backCameraVideoDataOutputConnection) else {
+			print("Could not add a connection to the back camera video data output")
+			return false
+		}
+		session.addConnection(backCameraVideoDataOutputConnection)
+		backCameraVideoDataOutputConnection.videoOrientation = .portrait
+
 		// Connect the back camera device input to the back camera video preview layer
 		guard let backCameraVideoPreviewLayer = backCameraVideoPreviewLayer else {
 			return false
@@ -398,7 +400,7 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 			return false
 		}
 		session.addConnection(backCameraVideoPreviewLayerConnection)
-		
+
 		return true
 	}
 	
@@ -451,7 +453,7 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
             return false
         }
         session.addOutputWithNoConnections(frontCameraDepthDataOutput)
-        frontCameraDepthDataOutput.setDelegate(self, callbackQueue: dataOutputQueue)
+        frontCameraDepthDataOutput.setDelegate(self, callbackQueue: depthQueue)
 
         // Connect the front camera device input to the front camera depth data output
         let frontCameraDepthDataOutputConnection = AVCaptureConnection(inputPorts: [frontCameraDepthPort], output: frontCameraDepthDataOutput)
@@ -493,6 +495,7 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
             print("Could not lock frontCamera for configuration: \(error)")
             return false
         }
+        
         print("frontCamera depth format: \(frontCamera.activeDepthDataFormat!)")
 		
 		return true

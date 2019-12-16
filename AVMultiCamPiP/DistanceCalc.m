@@ -47,9 +47,17 @@
         } else { // nan
             avgDepth = (minDepth + maxDepth) / 2;
         }
+        avgDepth = 1.0 / mid;
     } else {
         avgDepth /= count;
     }
+    
+    if (avgDepth > maxDepth) {
+        avgDepth = maxDepth;
+    } else if (avgDepth < minDepth) {
+        avgDepth = minDepth;
+    }
+    
     printf("avgDepth %f cm\n", 100 * avgDepth);
     CVPixelBufferUnlockBaseAddress(depthBuffer, kCVPixelBufferLock_ReadOnly);
     return avgDepth;
