@@ -9,7 +9,7 @@ import UIKit
 import AVFoundation
 import Photos
 
-class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDelegate, AVCaptureVideoDataOutputSampleBufferDelegate {
+class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDelegate, AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptureDepthDataOutputDelegate {
 	
 	// MARK: View Controller Life Cycle
 	
@@ -276,6 +276,8 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 	private let sessionQueue = DispatchQueue(label: "session queue") // Communicate with the session and other session objects on this queue.
 	
 	private let dataOutputQueue = DispatchQueue(label: "data output queue")
+    
+//    private let dataOutputQueue2 = DispatchQueue(label: "data output queue2") // TODO: ??
 	
 	private var setupResult: SessionSetupResult = .success
 	
@@ -290,6 +292,8 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 	private var frontCameraDeviceInput: AVCaptureDeviceInput?
 	
 	private let frontCameraVideoDataOutput = AVCaptureVideoDataOutput()
+    
+    private let frontCameraDepthDataOutput = AVCaptureDepthDataOutput()
 	
 	@IBOutlet private var frontCameraVideoPreviewView: PreviewView!
 	
@@ -342,7 +346,7 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 			session.commitConfiguration()
 		}
 		
-		// Find the back camera
+		// MARK: Find the back camera
 		guard let backCamera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else {
 			print("Could not find the back camera")
 			return false
@@ -410,8 +414,8 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 			session.commitConfiguration()
 		}
 		
-		// Find the front camera
-		guard let frontCamera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .front) else {
+		// MARK: Find the front camera
+        guard let frontCamera = AVCaptureDevice.default(.builtInTrueDepthCamera, for: .video, position: .front) else {
 			print("Could not find the front camera")
 			return false
 		}
@@ -436,7 +440,7 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 			let frontCameraVideoPort = frontCameraDeviceInput.ports(for: .video,
 																	sourceDeviceType: frontCamera.deviceType,
 																	sourceDevicePosition: frontCamera.position).first else {
-																		print("Could not find the front camera device input's video port")
+                                                                        print("Could not find the front camera device input's video port")
 																		return false
 		}
 		
@@ -459,7 +463,33 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 		frontCameraVideoDataOutputConnection.videoOrientation = .portrait
 		frontCameraVideoDataOutputConnection.automaticallyAdjustsVideoMirroring = false
 		frontCameraVideoDataOutputConnection.isVideoMirrored = true
+        
+        // MARK: Front camera depth output
+        // configure depth port
+        guard let frontCameraDepthPort = frontCameraDeviceInput.ports(for: .depthData, sourceDeviceType: frontCamera.deviceType, sourceDevicePosition: frontCamera.position).first else {
+            print("Could not find the front camera device input's depth port")
+            return false
+        }
+        
+        // Add the front camera depth data output
+        guard session.canAddOutput(frontCameraDepthDataOutput) else {
+            print("Could not add the front camera depth data output")
+            return false
+        }
+        session.addOutputWithNoConnections(frontCameraDepthDataOutput)
+        frontCameraDepthDataOutput.setDelegate(self, callbackQueue: dataOutputQueue)
 
+        // Connect the front camera device input to the front camera depth data output
+        let frontCameraDepthDataOutputConnection = AVCaptureConnection(inputPorts: [frontCameraDepthPort], output: frontCameraDepthDataOutput)
+        guard session.canAddConnection(frontCameraDepthDataOutputConnection) else {
+            print("Could not add a connection to the front camera depth data output")
+            return false
+        }
+        session.addConnection(frontCameraDepthDataOutputConnection)
+        frontCameraDepthDataOutputConnection.videoOrientation = .portrait
+        frontCameraDepthDataOutputConnection.automaticallyAdjustsVideoMirroring = false
+        frontCameraDepthDataOutputConnection.isVideoMirrored = true
+        
 		// Connect the front camera device input to the front camera video preview layer
 		guard let frontCameraVideoPreviewLayer = frontCameraVideoPreviewLayer else {
 			return false
@@ -472,6 +502,24 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 		session.addConnection(frontCameraVideoPreviewLayerConnection)
 		frontCameraVideoPreviewLayerConnection.automaticallyAdjustsVideoMirroring = false
 		frontCameraVideoPreviewLayerConnection.isVideoMirrored = true
+        
+        // Search for highest resolution with float-16 depth values
+        let depthFormats = frontCamera.activeFormat.supportedDepthDataFormats
+        let filtered = depthFormats.filter({
+            CMFormatDescriptionGetMediaSubType($0.formatDescription) == kCVPixelFormatType_DepthFloat16
+        })
+        let selectedFormat = filtered.max(by: {
+            first, second in CMVideoFormatDescriptionGetDimensions(first.formatDescription).width < CMVideoFormatDescriptionGetDimensions(second.formatDescription).width
+        })
+        do {
+            try frontCamera.lockForConfiguration()
+            frontCamera.activeDepthDataFormat = selectedFormat
+            frontCamera.unlockForConfiguration()
+        } catch {
+            print("Could not lock frontCamera for configuration: \(error)")
+            return false
+        }
+        print("frontCamera depth format: \(frontCamera.activeDepthDataFormat!)")
 		
 		return true
 	}
@@ -762,6 +810,7 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 		}
 	}
 	
+    // TODO: This function will not work due to our newly added depth data output. Consider eliminating the video recording for front camera
 	private func createVideoSettings() -> [String: NSObject]? {
 		guard let backCameraVideoSettings = backCameraVideoDataOutput.recommendedVideoSettingsForAssetWriter(writingTo: .mov) as? [String: NSObject] else {
 			print("Could not get back camera video settings")
@@ -838,7 +887,16 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 			}
 		}
 	}
+    
+    // MARK: Delegated by depth output
+    func depthDataOutput(_ output: AVCaptureDepthDataOutput, didOutput depthData: AVDepthData, timestamp: CMTime, connection: AVCaptureConnection) {
+//        print("receive depthDataOutput: \(depthData)")
+        let buffer = depthData.depthDataMap
+        let dist = DistanceCalc.calcDistance(forDepthBuffer: buffer, minDepth: 0.0, maxDepth: 5.0)
+//        print("distance: \(dist)")
+    }
 	
+    // MARK: Delegated by video/audio output
 	func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
 		if let videoDataOutput = output as? AVCaptureVideoDataOutput {
 			processVideoSampleBuffer(sampleBuffer, fromOutput: videoDataOutput)
@@ -1230,4 +1288,30 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 			print("Session stopped running due to system pressure level.")
 		}
 	}
+    
+    // MARK: back camera zooming demo
+    @IBOutlet weak var slider: UISlider!
+    
+    @IBAction func handleSlider(_ sender: Any) {
+//        print("sliding: \(slider.value)")
+        self.zoom = Double(1.0 + slider.value * 4.0) // range [1.0, 5.0]
+    }
+    
+    @objc public var zoom: Double = 1.0 {
+        didSet { // will be triggered after setting self.zoom
+            guard let device = self.backCameraDeviceInput?.device else {
+                print("zoom: no backCameraDeviceInput found!")
+                return
+            }
+            
+            do {
+                try device.lockForConfiguration()
+                print("change videoZoomFactor into \(self.zoom)")
+                device.videoZoomFactor = CGFloat(self.zoom)
+                device.unlockForConfiguration()
+            } catch {
+                print("error encoutered in zooming, \(error)")
+            }
+        }
+    }
 }

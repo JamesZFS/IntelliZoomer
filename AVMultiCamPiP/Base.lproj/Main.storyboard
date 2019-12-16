@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="14784.3" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="BYZ-38-t0r">
-    <device id="retina6_1" orientation="portrait"/>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="15505" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="BYZ-38-t0r">
+    <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="14740.3"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="15510"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -17,6 +17,15 @@
                         <subviews>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="WOD-qV-bPs" customClass="PreviewView" customModule="AVMultiCamPiP" customModuleProvider="target">
                                 <rect key="frame" x="0.0" y="85" width="414" height="736"/>
+                                <subviews>
+                                    <slider opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="0.5" minValue="0.0" maxValue="1" translatesAutoresizingMaskIntoConstraints="NO" id="W82-eD-6PD">
+                                        <rect key="frame" x="148" y="620" width="118" height="30"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                        <connections>
+                                            <action selector="handleSlider:" destination="BYZ-38-t0r" eventType="valueChanged" id="pin-Fs-4qH"/>
+                                        </connections>
+                                    </slider>
+                                </subviews>
                                 <constraints>
                                     <constraint firstAttribute="height" secondItem="WOD-qV-bPs" secondAttribute="width" multiplier="16:9" id="hFe-b4-Urr"/>
                                 </constraints>
@@ -122,6 +131,7 @@
                         <outlet property="frontCameraVideoPreviewView" destination="iLU-Vt-ZWG" id="b2V-KG-PHW"/>
                         <outlet property="recordButton" destination="SLg-cy-w81" id="VQn-Ok-V1i"/>
                         <outlet property="resumeButton" destination="Wvi-Ng-fni" id="brr-go-csn"/>
+                        <outlet property="slider" destination="W82-eD-6PD" id="iUk-vp-7ka"/>
                         <outletCollection property="frontCameraPiPConstraints" destination="2gD-HS-Mqz" collectionClass="NSMutableArray" id="hkP-yg-Awn"/>
                         <outletCollection property="frontCameraPiPConstraints" destination="7Ap-XQ-8gM" collectionClass="NSMutableArray" id="2cM-la-TUw"/>
                         <outletCollection property="frontCameraPiPConstraints" destination="GLN-Xd-Uyd" collectionClass="NSMutableArray" id="PNW-KC-taZ"/>
