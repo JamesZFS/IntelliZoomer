@@ -389,15 +389,15 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 //		backCameraVideoDataOutputConnection.videoOrientation = .portrait
 //
 		// Connect the back camera device input to the back camera video preview layer
-		guard let backCameraVideoPreviewLayer = backCameraVideoPreviewLayer else {
-			return false
-		}
-		let backCameraVideoPreviewLayerConnection = AVCaptureConnection(inputPort: backCameraVideoPort, videoPreviewLayer: backCameraVideoPreviewLayer)
-		guard session.canAddConnection(backCameraVideoPreviewLayerConnection) else {
-			print("Could not add a connection to the back camera video preview layer")
-			return false
-		}
-		session.addConnection(backCameraVideoPreviewLayerConnection)
+//		guard let backCameraVideoPreviewLayer = backCameraVideoPreviewLayer else {
+//			return false
+//		}
+//		let backCameraVideoPreviewLayerConnection = AVCaptureConnection(inputPort: backCameraVideoPort, videoPreviewLayer: backCameraVideoPreviewLayer)
+//		guard session.canAddConnection(backCameraVideoPreviewLayerConnection) else {
+//			print("Could not add a connection to the back camera video preview layer")
+//			return false
+//		}
+//		session.addConnection(backCameraVideoPreviewLayerConnection)
 		
 		return true
 	}
@@ -814,6 +814,8 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 	}
     
     @IBOutlet weak var depthTextView: UITextField!
+    
+    private var depthTemporalWindow = RingQueue<Float>.init(repeating: (minDist + maxDist) / 2, capacity: 10)
             
     // MARK: Delegated by depth output
     func depthDataOutput(_ output: AVCaptureDepthDataOutput, didOutput depthData: AVDepthData, timestamp: CMTime, connection: AVCaptureConnection) {
@@ -824,10 +826,13 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 //        print("receive depthDataOutput: \(depthData)")
         let buffer = depthData.depthDataMap
         let dist = DistanceCalc.calcDistance(forDepthBuffer: buffer, minDepth: minDist, maxDepth: maxDist)
-        let ratio = (dist - minDist) / (maxDist - minDist)
+        let ratio: Float = (dist - minDist) / (maxDist - minDist)
+        depthTemporalWindow.push(ratio)
+        let smoothRatio = self.depthTemporalWindow.sum / Float(self.depthTemporalWindow.capacity); // average over time
+        
         DispatchQueue.main.async {
             self.depthTextView.text! = String(format: "%.1f cm", dist * 100)
-            self.zoom = lerp(ratio, lower: minZoom, upper: maxZoom)
+            self.zoom = lerp(smoothRatio, lower: minZoom, upper: maxZoom)
         }
     }
     	
