@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "42E159DD227A481B00F81016"
-               BuildableName = "AVMultiCamPiP.app"
+               BuildableName = "IZ(fierce).app"
                BlueprintName = "AVMultiCamPiP"
                ReferencedContainer = "container:AVMultiCamPiP.xcodeproj">
             </BuildableReference>
@@ -45,7 +45,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "42E159DD227A481B00F81016"
-            BuildableName = "AVMultiCamPiP.app"
+            BuildableName = "IZ(fierce).app"
             BlueprintName = "AVMultiCamPiP"
             ReferencedContainer = "container:AVMultiCamPiP.xcodeproj">
          </BuildableReference>
@@ -62,7 +62,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "42E159DD227A481B00F81016"
-            BuildableName = "AVMultiCamPiP.app"
+            BuildableName = "IZ(fierce).app"
             BlueprintName = "AVMultiCamPiP"
             ReferencedContainer = "container:AVMultiCamPiP.xcodeproj">
          </BuildableReference>

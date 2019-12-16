@@ -9,6 +9,7 @@ import UIKit
 import AVFoundation
 import Photos
 import Vision
+import MediaPlayer
 
 class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDelegate, AVCaptureVideoDataOutputSampleBufferDelegate, AVCapturePhotoCaptureDelegate {
 	
@@ -34,6 +35,20 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 		frontCameraVideoPreviewLayer = frontCameraVideoPreviewView.videoPreviewLayer
 				
 		UIDevice.current.beginGeneratingDeviceOrientationNotifications()
+        
+        // listen for volume button event to implement `capture` shortcut
+        let audioSession = AVAudioSession.sharedInstance()
+        volume = audioSession.outputVolume-0.1 //if the user is at 1 (full volume)
+        do {
+            try audioSession.setActive(true)
+            audioSession.addObserver(self, forKeyPath: "outputVolume", options: NSKeyValueObservingOptions.new, context: nil)
+            //prevents the volume hud from showing up
+            let volView = MPVolumeView(frame: .zero)
+            view.addSubview(volView)
+        }
+        catch {
+            print("cannot set audio session active")
+        }
 		
 		/*
 		Configure the capture session.
@@ -137,6 +152,18 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 			self.renderingEnabled = true
 		}
 	}
+    
+    // MARK: Volume button shorcut for `capture`
+    override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
+        //when the user changes the volume,
+        //prevent the output volume from changing by setting it to the default volume we specified,
+        //so that we can continue pressing the buttons for ever
+        (MPVolumeView().subviews.filter{NSStringFromClass($0.classForCoder) == "MPVolumeSlider"}.first as? UISlider)?.setValue(volume, animated: false)
+
+        // trigger capture
+        print("volume changed")
+        capture()
+    }
 	
 	// MARK: KVO and Notifications
 	
@@ -273,6 +300,10 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 	private var microphoneDeviceInput: AVCaptureDeviceInput?
 	
 	private let backMicrophoneAudioDataOutput = AVCaptureAudioDataOutput()
+    
+    //keeps track of the initial volume the user had set when entering the app
+    //used to reset the volume when he exits the app
+    private var volume: Float = 0
 		
 	// Must be called on the session queue
 	private func configureSession() {
@@ -783,13 +814,17 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
         
     // MARK: Take a photo
     @IBAction func onCapture(_ sender: Any) {
+        capture()
+    }
+    
+    func capture() {
         let settings = AVCapturePhotoSettings()
         settings.embedsDepthDataInPhoto = false
         settings.flashMode = .off
         backCameraPhotoOutput.capturePhoto(with: settings, delegate: self)
     }
     
-    public func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
+    func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
         guard let data = photo.fileDataRepresentation() else {
             print("Cannot get photo file data representation")
             return
