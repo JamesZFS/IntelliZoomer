@@ -8,8 +8,9 @@ Implements the view controller for the camera interface.
 import UIKit
 import AVFoundation
 import Photos
+import Vision
 
-class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDelegate, AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptureDepthDataOutputDelegate {
+class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDelegate, AVCaptureVideoDataOutputSampleBufferDelegate {
 	
 	// MARK: View Controller Life Cycle
 	
@@ -289,8 +290,8 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 	
 	private var frontCameraDeviceInput: AVCaptureDeviceInput?
 	    
-    private let frontCameraDepthDataOutput = AVCaptureDepthDataOutput()
-	
+    private let frontCameraVideoDataOutput = AVCaptureVideoDataOutput()
+    	
 	@IBOutlet private var frontCameraVideoPreviewView: PreviewView!
 	
 	private weak var frontCameraVideoPreviewLayer: AVCaptureVideoPreviewLayer?
@@ -369,35 +370,35 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 																print("Could not find the back camera device input's video port")
 																return false
 		}
-//
-//		// Add the back camera video data output
-//		guard session.canAddOutput(backCameraVideoDataOutput) else {
-//			print("Could not add the back camera video data output")
-//			return false
-//		}
-//		session.addOutputWithNoConnections(backCameraVideoDataOutput)
-//		backCameraVideoDataOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_32BGRA)]
-//		backCameraVideoDataOutput.setSampleBufferDelegate(self, queue: dataOutputQueue)
-//
-//		// Connect the back camera device input to the back camera video data output
-//		let backCameraVideoDataOutputConnection = AVCaptureConnection(inputPorts: [backCameraVideoPort], output: backCameraVideoDataOutput)
-//		guard session.canAddConnection(backCameraVideoDataOutputConnection) else {
-//			print("Could not add a connection to the back camera video data output")
-//			return false
-//		}
-//		session.addConnection(backCameraVideoDataOutputConnection)
-//		backCameraVideoDataOutputConnection.videoOrientation = .portrait
-//
+
+		// Add the back camera video data output
+		guard session.canAddOutput(backCameraVideoDataOutput) else {
+			print("Could not add the back camera video data output")
+			return false
+		}
+		session.addOutputWithNoConnections(backCameraVideoDataOutput)
+		backCameraVideoDataOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_32BGRA)]
+		backCameraVideoDataOutput.setSampleBufferDelegate(self, queue: dataOutputQueue)
+
+		// Connect the back camera device input to the back camera video data output
+		let backCameraVideoDataOutputConnection = AVCaptureConnection(inputPorts: [backCameraVideoPort], output: backCameraVideoDataOutput)
+		guard session.canAddConnection(backCameraVideoDataOutputConnection) else {
+			print("Could not add a connection to the back camera video data output")
+			return false
+		}
+		session.addConnection(backCameraVideoDataOutputConnection)
+		backCameraVideoDataOutputConnection.videoOrientation = .portrait
+
 		// Connect the back camera device input to the back camera video preview layer
-//		guard let backCameraVideoPreviewLayer = backCameraVideoPreviewLayer else {
-//			return false
-//		}
-//		let backCameraVideoPreviewLayerConnection = AVCaptureConnection(inputPort: backCameraVideoPort, videoPreviewLayer: backCameraVideoPreviewLayer)
-//		guard session.canAddConnection(backCameraVideoPreviewLayerConnection) else {
-//			print("Could not add a connection to the back camera video preview layer")
-//			return false
-//		}
-//		session.addConnection(backCameraVideoPreviewLayerConnection)
+		guard let backCameraVideoPreviewLayer = backCameraVideoPreviewLayer else {
+			return false
+		}
+		let backCameraVideoPreviewLayerConnection = AVCaptureConnection(inputPort: backCameraVideoPort, videoPreviewLayer: backCameraVideoPreviewLayer)
+		guard session.canAddConnection(backCameraVideoPreviewLayerConnection) else {
+			print("Could not add a connection to the back camera video preview layer")
+			return false
+		}
+		session.addConnection(backCameraVideoPreviewLayerConnection)
 		
 		return true
 	}
@@ -409,7 +410,7 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 		}
 		
 		// MARK: Find the front camera
-        guard let frontCamera = AVCaptureDevice.default(.builtInTrueDepthCamera, for: .video, position: .front) else {
+        guard let frontCamera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .front) else {
 			print("Could not find the front camera")
 			return false
 		}
@@ -438,31 +439,27 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 																		return false
 		}
 		        
-        // MARK: Front camera depth output
-        // configure depth port
-        guard let frontCameraDepthPort = frontCameraDeviceInput.ports(for: .depthData, sourceDeviceType: frontCamera.deviceType, sourceDevicePosition: frontCamera.position).first else {
-            print("Could not find the front camera device input's depth port")
+        // MARK: Front camera video output
+        // Add the front camera video data output
+        guard session.canAddOutput(frontCameraVideoDataOutput) else {
+            print("Could not add the front camera video data output")
             return false
         }
+        session.addOutputWithNoConnections(frontCameraVideoDataOutput)
+        frontCameraVideoDataOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_32BGRA)]
+        frontCameraVideoDataOutput.setSampleBufferDelegate(self, queue: dataOutputQueue)
         
-        // Add the front camera depth data output
-        guard session.canAddOutput(frontCameraDepthDataOutput) else {
-            print("Could not add the front camera depth data output")
+        // Connect the front camera device input to the front camera video data output
+        let frontCameraVideoDataOutputConnection = AVCaptureConnection(inputPorts: [frontCameraVideoPort], output: frontCameraVideoDataOutput)
+        guard session.canAddConnection(frontCameraVideoDataOutputConnection) else {
+            print("Could not add a connection to the front camera video data output")
             return false
         }
-        session.addOutputWithNoConnections(frontCameraDepthDataOutput)
-        frontCameraDepthDataOutput.setDelegate(self, callbackQueue: dataOutputQueue)
-
-        // Connect the front camera device input to the front camera depth data output
-        let frontCameraDepthDataOutputConnection = AVCaptureConnection(inputPorts: [frontCameraDepthPort], output: frontCameraDepthDataOutput)
-        guard session.canAddConnection(frontCameraDepthDataOutputConnection) else {
-            print("Could not add a connection to the front camera depth data output")
-            return false
-        }
-        session.addConnection(frontCameraDepthDataOutputConnection)
-        frontCameraDepthDataOutputConnection.videoOrientation = .portrait
-        frontCameraDepthDataOutputConnection.automaticallyAdjustsVideoMirroring = false
-        frontCameraDepthDataOutputConnection.isVideoMirrored = true
+        session.addConnection(frontCameraVideoDataOutputConnection)
+        frontCameraVideoDataOutputConnection.videoOrientation = .portrait
+        frontCameraVideoDataOutputConnection.automaticallyAdjustsVideoMirroring = false
+        frontCameraVideoDataOutputConnection.isVideoMirrored = true
+        
         
 		// Connect the front camera device input to the front camera video preview layer
 		guard let frontCameraVideoPreviewLayer = frontCameraVideoPreviewLayer else {
@@ -476,25 +473,7 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 		session.addConnection(frontCameraVideoPreviewLayerConnection)
 		frontCameraVideoPreviewLayerConnection.automaticallyAdjustsVideoMirroring = false
 		frontCameraVideoPreviewLayerConnection.isVideoMirrored = true
-        
-        // Search for highest resolution with float-16 depth values
-        let depthFormats = frontCamera.activeFormat.supportedDepthDataFormats
-        let filtered = depthFormats.filter({
-            CMFormatDescriptionGetMediaSubType($0.formatDescription) == kCVPixelFormatType_DepthFloat16
-        })
-        let selectedFormat = filtered.max(by: {
-            first, second in CMVideoFormatDescriptionGetDimensions(first.formatDescription).width < CMVideoFormatDescriptionGetDimensions(second.formatDescription).width
-        })
-        do {
-            try frontCamera.lockForConfiguration()
-            frontCamera.activeDepthDataFormat = selectedFormat
-            frontCamera.unlockForConfiguration()
-        } catch {
-            print("Could not lock frontCamera for configuration: \(error)")
-            return false
-        }
-        print("frontCamera depth format: \(frontCamera.activeDepthDataFormat!)")
-		
+        		
 		return true
 	}
 	
@@ -525,30 +504,30 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 			return false
 		}
 		
-//		// Find the audio device input's back audio port
-//		guard let microphoneDeviceInput = microphoneDeviceInput,
-//			let backMicrophonePort = microphoneDeviceInput.ports(for: .audio,
-//																 sourceDeviceType: microphone.deviceType,
-//																 sourceDevicePosition: .back).first else {
-//																	print("Could not find the back camera device input's audio port")
-//																	return false
-//		}
-//
-//		// Add the back microphone audio data output
-//		guard session.canAddOutput(backMicrophoneAudioDataOutput) else {
-//			print("Could not add the back microphone audio data output")
-//			return false
-//		}
-//		session.addOutputWithNoConnections(backMicrophoneAudioDataOutput)
-//		backMicrophoneAudioDataOutput.setSampleBufferDelegate(self, queue: dataOutputQueue)
-//
-//		// Connect the back microphone to the back audio data output
-//		let backMicrophoneAudioDataOutputConnection = AVCaptureConnection(inputPorts: [backMicrophonePort], output: backMicrophoneAudioDataOutput)
-//		guard session.canAddConnection(backMicrophoneAudioDataOutputConnection) else {
-//			print("Could not add a connection to the back microphone audio data output")
-//			return false
-//		}
-//		session.addConnection(backMicrophoneAudioDataOutputConnection)
+		// Find the audio device input's back audio port
+		guard let microphoneDeviceInput = microphoneDeviceInput,
+			let backMicrophonePort = microphoneDeviceInput.ports(for: .audio,
+																 sourceDeviceType: microphone.deviceType,
+																 sourceDevicePosition: .back).first else {
+																	print("Could not find the back camera device input's audio port")
+																	return false
+		}
+
+		// Add the back microphone audio data output
+		guard session.canAddOutput(backMicrophoneAudioDataOutput) else {
+			print("Could not add the back microphone audio data output")
+			return false
+		}
+		session.addOutputWithNoConnections(backMicrophoneAudioDataOutput)
+		backMicrophoneAudioDataOutput.setSampleBufferDelegate(self, queue: dataOutputQueue)
+
+		// Connect the back microphone to the back audio data output
+		let backMicrophoneAudioDataOutputConnection = AVCaptureConnection(inputPorts: [backMicrophonePort], output: backMicrophoneAudioDataOutput)
+		guard session.canAddConnection(backMicrophoneAudioDataOutputConnection) else {
+			print("Could not add a connection to the back microphone audio data output")
+			return false
+		}
+		session.addConnection(backMicrophoneAudioDataOutputConnection)
 				
 		return true
 	}
@@ -746,7 +725,6 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
         return backMicrophoneAudioSettings
 	}
 	
-    // TODO: This function will not work due to our newly added depth data output. Consider eliminating the video recording for front camera
 	private func createVideoSettings() -> [String: NSObject]? {
 		guard let backCameraVideoSettings = backCameraVideoDataOutput.recommendedVideoSettingsForAssetWriter(writingTo: .mov) as? [String: NSObject] else {
 			print("Could not get back camera video settings")
@@ -813,29 +791,10 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 		}
 	}
     
-    @IBOutlet weak var depthTextView: UITextField!
+    @IBOutlet weak var textView: UITextField!
     
-    private var depthTemporalWindow = RingQueue<Float>.init(repeating: (minDist + maxDist) / 2, capacity: 10)
-            
-    // MARK: Delegated by depth output
-    func depthDataOutput(_ output: AVCaptureDepthDataOutput, didOutput depthData: AVDepthData, timestamp: CMTime, connection: AVCaptureConnection) {
-        guard (output == frontCameraDepthDataOutput) else {
-            // Ignoring unknown depth data output
-            return
-        }
-//        print("receive depthDataOutput: \(depthData)")
-        let buffer = depthData.depthDataMap
-        let dist = DistanceCalc.calcDistance(forDepthBuffer: buffer, minDepth: minDist, maxDepth: maxDist)
-        let ratio: Float = (dist - minDist) / (maxDist - minDist)
-        depthTemporalWindow.push(ratio)
-        let smoothRatio = self.depthTemporalWindow.sum / Float(self.depthTemporalWindow.capacity); // average over time
-        
-        DispatchQueue.main.async {
-            self.depthTextView.text! = String(format: "%.1f cm", dist * 100)
-            self.zoom = lerp(smoothRatio, lower: minZoom, upper: maxZoom)
-        }
-    }
-    	
+    private var zoomRatioTemporalWindow = RingQueue<Float>.init(repeating: (minDist + maxDist) / 2, capacity: 10)
+                	
     // MARK: Delegated by video/audio output
 	func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
 		if let videoDataOutput = output as? AVCaptureVideoDataOutput {
@@ -849,10 +808,6 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 		if videoTrackSourceFormatDescription == nil {
 			videoTrackSourceFormatDescription = CMSampleBufferGetFormatDescription( sampleBuffer )
 		}
-        guard videoDataOutput == self.backCameraVideoDataOutput else {
-            // Ignoring video sample buffer
-            return
-        }
         guard renderingEnabled else {
             return
         }
@@ -860,17 +815,81 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
             return
         }
         
-        // If we're recording, append this buffer to the movie
-        if let recorder = movieRecorder,
-            recorder.isRecording {
-            guard let videoSampleBuffer = createVideoSampleBufferWithPixelBuffer(pixelBuffer, presentationTime: CMSampleBufferGetPresentationTimeStamp(sampleBuffer)) else {
-                print("Error: Unable to create sample buffer from pixelbuffer")
-                return
+        // Determine:
+        // - which camera the sample buffer came from
+        if videoDataOutput == frontCameraVideoDataOutput {
+            // recognize face & calc distance from front camera
+            performVisionRequest(pixelBuffer: pixelBuffer)
+        }
+        else if videoDataOutput == backCameraVideoDataOutput {
+            // record from back camera
+            // If we're recording, append this buffer to the movie
+            if let recorder = movieRecorder,
+                recorder.isRecording {
+                guard let videoSampleBuffer = createVideoSampleBufferWithPixelBuffer(pixelBuffer, presentationTime: CMSampleBufferGetPresentationTimeStamp(sampleBuffer)) else {
+                    print("Error: Unable to create sample buffer from pixelbuffer")
+                    return
+                }
+                recorder.recordVideo(sampleBuffer: videoSampleBuffer)
             }
-            recorder.recordVideo(sampleBuffer: videoSampleBuffer)
+        }
+        else {
+            // Ignore
+            return
         }
     }
-		
+    
+    lazy var faceDetectionRequest = VNDetectFaceRectanglesRequest(completionHandler: self.handleDetectedFaces)
+    
+    private func handleDetectedFaces(request: VNRequest?, error: Error?) {
+        if let nsError = error as NSError? {
+            print("Face Detection Error: \(nsError)")
+            DispatchQueue.main.async {
+                self.textView.text! = "Error"
+            }
+            return
+        }
+        DispatchQueue.main.async {
+            guard let results = request?.results as? [VNFaceObservation] else {
+                return
+            }
+            if results.count == 0 {
+                self.textView.text! = "No face"
+                return
+            }
+            let observation = results.max(by: {ob1, ob2 in  // select the largest face
+                return ob1.boundingBox.size.width * ob1.boundingBox.size.height < ob2.boundingBox.size.width * ob2.boundingBox.size.height
+            })!
+            let size = observation.boundingBox.size.width * observation.boundingBox.size.height
+            // MARK: map face size to zoom ratio
+            let distance = 1 / size
+            self.textView.text! = String(format: "%.2f", distance)
+//            for observation in results {
+//
+//                self.textView.text! = String(format: "%.2f", observation.boundingBox.size.width * observation.boundingBox.size.height)
+//            }
+        }
+    }
+    
+    private var visionCompCounter: Int = 0
+
+    private func performVisionRequest(pixelBuffer: CVPixelBuffer) {
+        visionCompCounter += 1
+        if visionCompCounter == 10 { // periodically detect face
+            visionCompCounter = 0
+            print("Prepare to detect face")
+            let imageRequestHandler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, options: [:])
+            DispatchQueue.global(qos: .userInitiated).async {
+                do {
+                    try imageRequestHandler.perform([self.faceDetectionRequest])  // MARK: perform face detection computation
+                } catch let error as NSError {
+                    print("Failed to perform image request: \(error)")
+                    return
+                }
+            }
+        }
+    }
+
 	private func processsAudioSampleBuffer(_ sampleBuffer: CMSampleBuffer, fromOutput audioDataOutput: AVCaptureAudioDataOutput) {
 		guard audioDataOutput == backMicrophoneAudioDataOutput else {
             // Ignoring audio sample buffer
