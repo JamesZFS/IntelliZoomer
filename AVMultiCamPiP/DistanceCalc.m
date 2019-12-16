@@ -22,7 +22,7 @@
     const uint8_t* baseAddr = (const uint8_t*)CVPixelBufferGetBaseAddress(depthBuffer);
     float avgDepth = 0;
     
-    const size_t half_w = 5;
+    const size_t half_w = 3;
     const size_t y_lo = height / 2 - half_w, y_hi = height / 2 + half_w;
     const size_t x_lo = width / 2 - half_w, x_hi = width / 2 + half_w;
     for (size_t y = y_lo; y < y_hi; ++y) {

@@ -80,6 +80,12 @@
                                     <action selector="resumeInterruptedSession:" destination="BYZ-38-t0r" eventType="touchUpInside" id="aDQ-Gk-zmz"/>
                                 </connections>
                             </button>
+                            <textField opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="left" contentVerticalAlignment="center" text="depth" borderStyle="roundedRect" textAlignment="center" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="vGR-2b-vj1">
+                                <rect key="frame" x="159" y="638" width="97" height="34"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                                <textInputTraits key="textInputTraits"/>
+                            </textField>
                         </subviews>
                         <color key="backgroundColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <constraints>
@@ -128,6 +134,7 @@
                     <connections>
                         <outlet property="backCameraVideoPreviewView" destination="WOD-qV-bPs" id="ra6-Ok-khD"/>
                         <outlet property="cameraUnavailableLabel" destination="MNA-vj-IrB" id="DHr-gt-WAW"/>
+                        <outlet property="depthTextView" destination="vGR-2b-vj1" id="wjN-Lv-7QZ"/>
                         <outlet property="frontCameraVideoPreviewView" destination="iLU-Vt-ZWG" id="b2V-KG-PHW"/>
                         <outlet property="recordButton" destination="SLg-cy-w81" id="VQn-Ok-V1i"/>
                         <outlet property="resumeButton" destination="Wvi-Ng-fni" id="brr-go-csn"/>
