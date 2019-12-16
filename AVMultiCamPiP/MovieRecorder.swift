@@ -81,6 +81,7 @@ class MovieRecorder {
 		} else if assetWriter.status == .writing {
 			if let input = assetWriterVideoInput,
 				input.isReadyForMoreMediaData {
+//                print("recording video")
 				input.append(sampleBuffer)
 			}
 		}
@@ -94,7 +95,7 @@ class MovieRecorder {
 			input.isReadyForMoreMediaData else {
 				return
 		}
-		
+//		print("recording audio")
 		input.append(sampleBuffer)
 	}
 }
