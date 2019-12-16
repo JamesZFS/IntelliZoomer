@@ -130,8 +130,6 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 		// Free up resources.
 		dataOutputQueue.async {
 			self.renderingEnabled = false
-			self.videoMixer.reset()
-			self.currentPiPSampleBuffer = nil
 		}
 	}
 	
@@ -290,9 +288,7 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 	private weak var backCameraVideoPreviewLayer: AVCaptureVideoPreviewLayer?
 	
 	private var frontCameraDeviceInput: AVCaptureDeviceInput?
-	
-	private let frontCameraVideoDataOutput = AVCaptureVideoDataOutput()
-    
+	    
     private let frontCameraDepthDataOutput = AVCaptureDepthDataOutput()
 	
 	@IBOutlet private var frontCameraVideoPreviewView: PreviewView!
@@ -302,9 +298,7 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 	private var microphoneDeviceInput: AVCaptureDeviceInput?
 	
 	private let backMicrophoneAudioDataOutput = AVCaptureAudioDataOutput()
-	
-	private let frontMicrophoneAudioDataOutput = AVCaptureAudioDataOutput()
-	
+		
 	// Must be called on the session queue
 	private func configureSession() {
 		guard setupResult == .success else { return }
@@ -443,27 +437,7 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
                                                                         print("Could not find the front camera device input's video port")
 																		return false
 		}
-		
-		// Add the front camera video data output
-		guard session.canAddOutput(frontCameraVideoDataOutput) else {
-			print("Could not add the front camera video data output")
-			return false
-		}
-		session.addOutputWithNoConnections(frontCameraVideoDataOutput)
-		frontCameraVideoDataOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_32BGRA)]
-		frontCameraVideoDataOutput.setSampleBufferDelegate(self, queue: dataOutputQueue)
-		
-		// Connect the front camera device input to the front camera video data output
-		let frontCameraVideoDataOutputConnection = AVCaptureConnection(inputPorts: [frontCameraVideoPort], output: frontCameraVideoDataOutput)
-		guard session.canAddConnection(frontCameraVideoDataOutputConnection) else {
-			print("Could not add a connection to the front camera video data output")
-			return false
-		}
-		session.addConnection(frontCameraVideoDataOutputConnection)
-		frontCameraVideoDataOutputConnection.videoOrientation = .portrait
-		frontCameraVideoDataOutputConnection.automaticallyAdjustsVideoMirroring = false
-		frontCameraVideoDataOutputConnection.isVideoMirrored = true
-        
+		        
         // MARK: Front camera depth output
         // configure depth port
         guard let frontCameraDepthPort = frontCameraDeviceInput.ports(for: .depthData, sourceDeviceType: frontCamera.deviceType, sourceDevicePosition: frontCamera.position).first else {
@@ -559,15 +533,7 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 																	print("Could not find the back camera device input's audio port")
 																	return false
 		}
-		
-		// Find the audio device input's front audio port
-		guard let frontMicrophonePort = microphoneDeviceInput.ports(for: .audio,
-																	sourceDeviceType: microphone.deviceType,
-																	sourceDevicePosition: .front).first else {
-			print("Could not find the front camera device input's audio port")
-			return false
-		}
-		
+        
 		// Add the back microphone audio data output
 		guard session.canAddOutput(backMicrophoneAudioDataOutput) else {
 			print("Could not add the back microphone audio data output")
@@ -575,15 +541,7 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 		}
 		session.addOutputWithNoConnections(backMicrophoneAudioDataOutput)
 		backMicrophoneAudioDataOutput.setSampleBufferDelegate(self, queue: dataOutputQueue)
-		
-		// Add the front microphone audio data output
-		guard session.canAddOutput(frontMicrophoneAudioDataOutput) else {
-			print("Could not add the front microphone audio data output")
-			return false
-		}
-		session.addOutputWithNoConnections(frontMicrophoneAudioDataOutput)
-		frontMicrophoneAudioDataOutput.setSampleBufferDelegate(self, queue: dataOutputQueue)
-		
+				
 		// Connect the back microphone to the back audio data output
 		let backMicrophoneAudioDataOutputConnection = AVCaptureConnection(inputPorts: [backMicrophonePort], output: backMicrophoneAudioDataOutput)
 		guard session.canAddConnection(backMicrophoneAudioDataOutputConnection) else {
@@ -591,15 +549,7 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 			return false
 		}
 		session.addConnection(backMicrophoneAudioDataOutputConnection)
-		
-		// Connect the front microphone to the back audio data output
-		let frontMicrophoneAudioDataOutputConnection = AVCaptureConnection(inputPorts: [frontMicrophonePort], output: frontMicrophoneAudioDataOutput)
-		guard session.canAddConnection(frontMicrophoneAudioDataOutputConnection) else {
-			print("Could not add a connection to the front microphone audio data output")
-			return false
-		}
-		session.addConnection(frontMicrophoneAudioDataOutputConnection)
-		
+				
 		return true
 	}
 	
@@ -722,15 +672,11 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 	
 	private var movieRecorder: MovieRecorder?
 	
-	private var currentPiPSampleBuffer: CMSampleBuffer?
-	
 	private var backgroundRecordingID: UIBackgroundTaskIdentifier?
 	
 	@IBOutlet private var recordButton: UIButton!
 	
 	private var renderingEnabled = true
-	
-	private var videoMixer = PiPVideoMixer()
 	
 	private var videoTrackSourceFormatDescription: CMFormatDescription?
 	
@@ -759,6 +705,7 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 			
 			let isRecording = self.movieRecorder?.isRecording ?? false
 			if !isRecording {
+                // begin recording
 				if UIDevice.current.isMultitaskingSupported {
 					self.backgroundRecordingID = UIApplication.shared.beginBackgroundTask(expirationHandler: nil)
 				}
@@ -796,18 +743,7 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 			print("Could not get back microphone audio settings")
 			return nil
 		}
-		guard let frontMicrophoneAudioSettings = frontMicrophoneAudioDataOutput.recommendedAudioSettingsForAssetWriter(writingTo: .mov) as? [String: NSObject] else {
-			print("Could not get front microphone audio settings")
-			return nil
-		}
-		
-		if backMicrophoneAudioSettings == frontMicrophoneAudioSettings {
-			// The front and back microphone audio settings are equal, so return either one
-			return backMicrophoneAudioSettings
-		} else {
-			print("Front and back microphone audio settings are not equal. Check your AVCaptureAudioDataOutput configuration.")
-			return nil
-		}
+        return backMicrophoneAudioSettings
 	}
 	
     // TODO: This function will not work due to our newly added depth data output. Consider eliminating the video recording for front camera
@@ -816,18 +752,7 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 			print("Could not get back camera video settings")
 			return nil
 		}
-		guard let frontCameraVideoSettings = frontCameraVideoDataOutput.recommendedVideoSettingsForAssetWriter(writingTo: .mov) as? [String: NSObject] else {
-			print("Could not get front camera video settings")
-			return nil
-		}
-		
-		if backCameraVideoSettings == frontCameraVideoSettings {
-			// The front and back camera video settings are equal, so return either one
-			return backCameraVideoSettings
-		} else {
-			print("Front and back camera video settings are not equal. Check your AVCaptureVideoDataOutput configuration.")
-			return nil
-		}
+		return backCameraVideoSettings
 	}
 	
 	private func createVideoTransform() -> CGAffineTransform? {
@@ -890,6 +815,10 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
     
     // MARK: Delegated by depth output
     func depthDataOutput(_ output: AVCaptureDepthDataOutput, didOutput depthData: AVDepthData, timestamp: CMTime, connection: AVCaptureConnection) {
+        guard (output == frontCameraDepthDataOutput) else {
+            // Ignoring unknown depth data output
+            return
+        }
 //        print("receive depthDataOutput: \(depthData)")
         let buffer = depthData.depthDataMap
         let dist = DistanceCalc.calcDistance(forDepthBuffer: buffer, minDepth: 0.0, maxDepth: 5.0)
@@ -909,89 +838,32 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 		if videoTrackSourceFormatDescription == nil {
 			videoTrackSourceFormatDescription = CMSampleBufferGetFormatDescription( sampleBuffer )
 		}
+        guard videoDataOutput == self.backCameraVideoDataOutput else {
+            // Ignoring video sample buffer
+            return
+        }
+        guard renderingEnabled else {
+            return
+        }
+        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
+            return
+        }
+        
+        // If we're recording, append this buffer to the movie
+        if let recorder = movieRecorder,
+            recorder.isRecording {
+            guard let videoSampleBuffer = createVideoSampleBufferWithPixelBuffer(pixelBuffer, presentationTime: CMSampleBufferGetPresentationTimeStamp(sampleBuffer)) else {
+                print("Error: Unable to create sample buffer from pixelbuffer")
+                return
+            }
+            recorder.recordVideo(sampleBuffer: videoSampleBuffer)
+        }
+    }
 		
-		// Determine:
-		// - which camera the sample buffer came from
-		// - if the sample buffer is for the PiP
-		var fullScreenSampleBuffer: CMSampleBuffer?
-		var pipSampleBuffer: CMSampleBuffer?
-		
-		if pipDevicePosition == .back && videoDataOutput == backCameraVideoDataOutput {
-			pipSampleBuffer = sampleBuffer
-		} else if pipDevicePosition == .back && videoDataOutput == frontCameraVideoDataOutput {
-			fullScreenSampleBuffer = sampleBuffer
-		} else if pipDevicePosition == .front && videoDataOutput == backCameraVideoDataOutput {
-			fullScreenSampleBuffer = sampleBuffer
-		} else if pipDevicePosition == .front && videoDataOutput == frontCameraVideoDataOutput {
-			pipSampleBuffer = sampleBuffer
-		}
-		
-		if let fullScreenSampleBuffer = fullScreenSampleBuffer {
-			processFullScreenSampleBuffer(fullScreenSampleBuffer)
-		}
-		
-		if let pipSampleBuffer = pipSampleBuffer {
-			processPiPSampleBuffer(pipSampleBuffer)
-		}
-	}
-	
-	private func processFullScreenSampleBuffer(_ fullScreenSampleBuffer: CMSampleBuffer) {
-		guard renderingEnabled else {
-			return
-		}
-		
-		guard let fullScreenPixelBuffer = CMSampleBufferGetImageBuffer(fullScreenSampleBuffer),
-			let formatDescription = CMSampleBufferGetFormatDescription(fullScreenSampleBuffer) else {
-				return
-		}
-		
-		guard let pipSampleBuffer = currentPiPSampleBuffer,
-			let pipPixelBuffer = CMSampleBufferGetImageBuffer(pipSampleBuffer) else {
-				return
-		}
-		
-		if !videoMixer.isPrepared {
-			videoMixer.prepare(with: formatDescription, outputRetainedBufferCountHint: 3)
-		}
-		
-		videoMixer.pipFrame = normalizedPipFrame
-		
-		// Mix the full screen pixel buffer with the pip pixel buffer
-		// When the PIP is the back camera, the primaryPixelBuffer is the front camera
-		guard let mixedPixelBuffer = videoMixer.mix(fullScreenPixelBuffer: fullScreenPixelBuffer,
-													pipPixelBuffer: pipPixelBuffer,
-													fullScreenPixelBufferIsFrontCamera: pipDevicePosition == .back) else {
-														print("Unable to combine video")
-														return
-		}
-		
-		// If we're recording, append this buffer to the movie
-		if let recorder = movieRecorder,
-			recorder.isRecording {
-			guard let finalVideoSampleBuffer = createVideoSampleBufferWithPixelBuffer(mixedPixelBuffer,
-																						   presentationTime: CMSampleBufferGetPresentationTimeStamp(fullScreenSampleBuffer)) else {
-																							print("Error: Unable to create sample buffer from pixelbuffer")
-																							return
-			}
-			
-			recorder.recordVideo(sampleBuffer: finalVideoSampleBuffer)
-		}
-	}
-	
-	private func processPiPSampleBuffer(_ pipSampleBuffer: CMSampleBuffer) {
-		guard renderingEnabled else {
-			return
-		}
-		
-		currentPiPSampleBuffer = pipSampleBuffer
-	}
-	
 	private func processsAudioSampleBuffer(_ sampleBuffer: CMSampleBuffer, fromOutput audioDataOutput: AVCaptureAudioDataOutput) {
-		
-		guard (pipDevicePosition == .back && audioDataOutput == backMicrophoneAudioDataOutput) ||
-			(pipDevicePosition == .front && audioDataOutput == frontMicrophoneAudioDataOutput) else {
-				// Ignoring audio sample buffer
-				return
+		guard audioDataOutput == backMicrophoneAudioDataOutput else {
+            // Ignoring audio sample buffer
+            return
 		}
 		
 		// If we're recording, append this buffer to the movie
