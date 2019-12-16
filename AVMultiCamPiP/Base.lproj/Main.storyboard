@@ -65,7 +65,7 @@
                                         </connections>
                                     </button>
                                     <switch opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" on="YES" translatesAutoresizingMaskIntoConstraints="NO" id="elZ-aT-jdu" userLabel="Auto Zoom Switch">
-                                        <rect key="frame" x="64" y="697" width="49" height="31"/>
+                                        <rect key="frame" x="60" y="697" width="49" height="31"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                     </switch>
                                     <view contentMode="scaleToFill" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="iLU-Vt-ZWG" customClass="PreviewView" customModule="AVMultiCamPiP" customModuleProvider="target">
@@ -150,6 +150,7 @@
                         <outlet property="autoZoomSwitch" destination="elZ-aT-jdu" id="VNJ-Y4-Pvh"/>
                         <outlet property="backCameraVideoPreviewView" destination="WOD-qV-bPs" id="ra6-Ok-khD"/>
                         <outlet property="calDistView" destination="ndJ-HC-XvD" id="8se-fl-ARO"/>
+                        <outlet property="calibrateButton" destination="dx3-tb-Wzv" id="g3o-WJ-MhN"/>
                         <outlet property="cameraUnavailableLabel" destination="MNA-vj-IrB" id="DHr-gt-WAW"/>
                         <outlet property="distView" destination="50J-at-4FE" id="XBY-i4-CyE"/>
                         <outlet property="frontCameraVideoPreviewView" destination="iLU-Vt-ZWG" id="b2V-KG-PHW"/>

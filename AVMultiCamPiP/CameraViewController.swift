@@ -18,7 +18,7 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 		super.viewDidLoad()
 		
 		// Allow users to double tap to switch between the front and back cameras being in a PiP
-		let togglePiPDoubleTapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(togglePiP))
+		let togglePiPDoubleTapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(toggleVerbose))
 		togglePiPDoubleTapGestureRecognizer.numberOfTapsRequired = 2
 		view.addGestureRecognizer(togglePiPDoubleTapGestureRecognizer)
 		
@@ -32,10 +32,7 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 		// Store the back and front video preview layers so we can connect them to their inputs
 		backCameraVideoPreviewLayer = backCameraVideoPreviewView.videoPreviewLayer
 		frontCameraVideoPreviewLayer = frontCameraVideoPreviewView.videoPreviewLayer
-		
-		// Store the location of the pip's frame in relation to the full screen video preview
-		updateNormalizedPiPFrame()
-		
+				
 		UIDevice.current.beginGeneratingDeviceOrientationNotifications()
 		
 		/*
@@ -200,59 +197,36 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
 		
 		keyValueObservations.removeAll()
 	}
-	
-	// MARK: Video Preview PiP Management
-	
-	private var pipDevicePosition: AVCaptureDevice.Position = .front
-	
-	private var normalizedPipFrame = CGRect.zero
-	
-	@IBOutlet private var frontCameraPiPConstraints: [NSLayoutConstraint]!
-	
-	@IBOutlet private var backCameraPiPConstraints: [NSLayoutConstraint]!
+
+    @IBOutlet private var frontCameraPiPConstraints: [NSLayoutConstraint]!
+    
+    @IBOutlet private var backCameraPiPConstraints: [NSLayoutConstraint]!
+    
+    private var verbose = true
 	
 	@objc // Expose to Objective-C for use with #selector()
-	private func togglePiP() {
-		// Disable animations so the views move immediately
-		CATransaction.begin()
-		UIView.setAnimationsEnabled(false)
-		CATransaction.setDisableActions(true)
-		
-		if pipDevicePosition == .front {
-			NSLayoutConstraint.deactivate(frontCameraPiPConstraints)
-			NSLayoutConstraint.activate(backCameraPiPConstraints)
-			view.sendSubviewToBack(frontCameraVideoPreviewView)
-			pipDevicePosition = .back
-		} else {
-			NSLayoutConstraint.deactivate(backCameraPiPConstraints)
-			NSLayoutConstraint.activate(frontCameraPiPConstraints)
-			view.sendSubviewToBack(backCameraVideoPreviewView)
-			pipDevicePosition = .front
-		}
-		
-		CATransaction.commit()
-		UIView.setAnimationsEnabled(true)
-		CATransaction.setDisableActions(false)
-	}
-	
-	private func updateNormalizedPiPFrame() {
-		let fullScreenVideoPreviewView: PreviewView
-		let pipVideoPreviewView: PreviewView
-		
-		if pipDevicePosition == .back {
-			fullScreenVideoPreviewView = frontCameraVideoPreviewView
-			pipVideoPreviewView = backCameraVideoPreviewView
-		} else if pipDevicePosition == .front {
-			fullScreenVideoPreviewView = backCameraVideoPreviewView
-			pipVideoPreviewView = frontCameraVideoPreviewView
-		} else {
-			fatalError("Unexpected pip device position: \(pipDevicePosition)")
-		}
-		
-		let pipFrameInFullScreenVideoPreview = pipVideoPreviewView.convert(pipVideoPreviewView.bounds, to: fullScreenVideoPreviewView)
-		let normalizedTransform = CGAffineTransform(scaleX: 1.0 / fullScreenVideoPreviewView.frame.width, y: 1.0 / fullScreenVideoPreviewView.frame.height)
-		
-		normalizedPipFrame = pipFrameInFullScreenVideoPreview.applying(normalizedTransform)
+	private func toggleVerbose() {
+		// MARK: Toggle display/hide verbose info on screen
+        defer {
+            verbose = !verbose
+        }
+        switch verbose {
+        case true:
+            autoZoomSwitch.isHidden = true
+            distView.isHidden = true
+            calDistView.isHidden = true
+            calibrateButton.isHidden = true
+            slider.isHidden = true
+            frontCameraVideoPreviewView.isHidden = true
+            
+        case false:
+            autoZoomSwitch.isHidden = false
+            distView.isHidden = false
+            calDistView.isHidden = false
+            calibrateButton.isHidden = false
+            slider.isHidden = false
+            frontCameraVideoPreviewView.isHidden = false
+        }
 	}
 	
 	// MARK: Capture Session Management
@@ -875,14 +849,15 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
     
     private lazy var faceDetectionRequest = VNDetectFaceRectanglesRequest(completionHandler: self.handleDetectedFaces)
     
-    private var calibrationFactor: CGFloat = 1
+    private var calibrationFactor: CGFloat = 0.5
+    @IBOutlet weak var calibrateButton: UIButton!
     
     private var currentDistance: CGFloat?
     
     @IBOutlet weak var distView: UITextField!
     @IBOutlet weak var calDistView: UITextField!
     
-    private var zoomRatioTemporalWindow = RingQueue<Float>.init(repeating: (minZoom + maxZoom) / 2, capacity: 10)
+    private var zoomRatioTemporalWindow = RingQueue<Float>.init(repeating: (minZoom + maxZoom) / 2, capacity: temporalWindowCapacity)
     
     
     @IBOutlet weak var autoZoomSwitch: UISwitch!
@@ -1269,7 +1244,7 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
             
             do {
                 try device.lockForConfiguration()
-                print("change videoZoomFactor into \(zoom)")
+//                print("change videoZoomFactor into \(zoom)")
                 device.videoZoomFactor = CGFloat(zoom)
                 device.unlockForConfiguration()
                 slider.setValue(lerp((zoom - minZoom) / (maxZoom - minZoom), lower: 0.0, upper: 1.0), animated: true)
