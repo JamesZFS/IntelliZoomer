@@ -929,6 +929,7 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
                 return ob1.boundingBox.size.width * ob1.boundingBox.size.height < ob2.boundingBox.size.width * ob2.boundingBox.size.height
             })!
             let size = observation.boundingBox.size.width * observation.boundingBox.size.height
+            print(size)
             // MARK: map face size to zoom ratio
             let distance = 1 / size
             self.currentDistance = distance
@@ -947,15 +948,53 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
     
 
     private func performVisionRequest(pixelBuffer: CVPixelBuffer) {
-        let imageRequestHandler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, options: [:])
-        DispatchQueue.global(qos: .userInitiated).async {
-            do {
-                try imageRequestHandler.perform([self.faceDetectionRequest])  // MARK: perform face detection computation
-            } catch let error as NSError {
-                print("Failed to perform image request: \(error)")
+        let faceDetector = CIDetector(ofType: CIDetectorTypeFace, context: nil, options: [
+            CIDetectorAccuracy: CIDetectorAccuracyHigh,
+            CIDetectorEyeBlink: true,
+            CIDetectorSmile: true
+         ])
+        let faces = faceDetector!.features(in: CIImage(cvPixelBuffer: pixelBuffer), options: [
+           CIDetectorAccuracy: CIDetectorAccuracyHigh,
+           CIDetectorEyeBlink: true,
+           CIDetectorSmile: true
+        ])
+        if let face = faces.first as? CIFaceFeature {
+            let size = face.bounds.size.width * face.bounds.size.height * 3.7e-7;
+            print(size)
+            if(face.hasSmile) {
+                print("smile")
+            }
+            DispatchQueue.main.sync {
+                let distance = 1 / size
+                self.currentDistance = distance
+                self.distView.text! = String(format: "di: %.2f", distance)
+                
+                // calibrated distance should range from 1 to 7
+                let calDist = Float(self.calibrationFactor * distance)
+                self.calDistView.text! = String(format: "cd: %.1f", calDist)
+                self.zoomRatioTemporalWindow.push(lerp(clamp((calDist - 1.0) / 6.0), lower: minZoom, upper: maxZoom))
+                
+                if self.autoZoomSwitch.isOn {
+                    self.zoom = self.zoomRatioTemporalWindow.sum / Float(self.zoomRatioTemporalWindow.capacity)
+                }
+            }
+        } else {
+            DispatchQueue.main.sync {
+                self.distView.text! = "No face"
+                self.calDistView.text! = ""
+                self.currentDistance = nil
                 return
             }
         }
+//        let imageRequestHandler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, options: [:])
+//        DispatchQueue.global(qos: .userInitiated).async {
+//            do {
+//                try imageRequestHandler.perform([self.faceDetectionRequest])  // MARK: perform face detection computation
+//            } catch let error as NSError {
+//                print("Failed to perform image request: \(error)")
+//                return
+//            }
+//        }
     }
 
 	private func processsAudioSampleBuffer(_ sampleBuffer: CMSampleBuffer, fromOutput audioDataOutput: AVCaptureAudioDataOutput) {

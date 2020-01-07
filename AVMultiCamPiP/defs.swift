@@ -8,7 +8,7 @@
 //  Global configurations:
 
 // subtle version:
-let minZoom: Float = 3.0
+let minZoom: Float = 2.0
 let maxZoom: Float = 5.0
 
 // fierce version:
