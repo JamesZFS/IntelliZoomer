@@ -916,7 +916,10 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
            CIDetectorEyeBlink: true,
            CIDetectorSmile: true
         ])
-        if let face = faces.first as? CIFaceFeature {
+        let face = faces.max(by: {
+            obj1, obj2 in return obj1.bounds.size.width * obj1.bounds.size.height < obj2.bounds.size.width * obj2.bounds.size.height
+        })
+        if let face = face as? CIFaceFeature {
             let size = face.bounds.size.width * face.bounds.size.height * 3.7e-7;
             if(face.hasSmile) {
                 smileWindow.push(1)
@@ -940,7 +943,8 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
                     self.zoom = self.zoomRatioTemporalWindow.sum / Float(self.zoomRatioTemporalWindow.capacity)
                 }
             }
-        } else {
+        }
+        else {
             DispatchQueue.main.sync {
                 self.distView.text! = "No face"
                 self.calDistView.text! = ""
@@ -948,6 +952,9 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
                 return
             }
         }
+//        if face as? CIFaceFeature {
+//
+//        }
     }
 
 	private func processsAudioSampleBuffer(_ sampleBuffer: CMSampleBuffer, fromOutput audioDataOutput: AVCaptureAudioDataOutput) {
