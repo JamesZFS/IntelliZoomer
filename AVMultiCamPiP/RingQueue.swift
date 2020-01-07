@@ -8,7 +8,7 @@
 
 import Foundation
 
-class RingQueue<T: AdditiveArithmetic> {
+class RingQueue<T: AdditiveArithmetic & Equatable> {
     private var elem: [T]
     private var curIdx: Int
     
@@ -46,5 +46,15 @@ class RingQueue<T: AdditiveArithmetic> {
     
     public var capacity: Int {
         get { return elem.count }
+    }
+    
+    public func countElem(_ e: T) -> Int { // return the number of elem == e
+        var count = 0
+        for i in elem {
+            if i == e {
+                count += 1
+            }
+        }
+        return count
     }
 }
