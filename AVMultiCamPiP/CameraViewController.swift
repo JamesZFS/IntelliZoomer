@@ -945,8 +945,25 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
         }
     }
     
+    private var smileWindow = RingQueue<Int>(repeating: 0, capacity: 10)
 
     private func performVisionRequest(pixelBuffer: CVPixelBuffer) {
+        let faceDetector = CIDetector(ofType: CIDetectorTypeFace, context: nil, options: [
+            CIDetectorAccuracy: CIDetectorAccuracyHigh,
+            CIDetectorEyeBlink: true,
+            CIDetectorSmile: true
+         ])
+        let faces = faceDetector!.features(in: CIImage(cvPixelBuffer: pixelBuffer))
+        let face = faces.max(by: {f1, f2 in
+            return f1.bounds.size.width < f2.bounds.size.width
+        })
+        if let face = face as? CIFaceFeature {
+            
+        }
+        else {
+            
+        }
+        /*
         let imageRequestHandler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, options: [:])
         DispatchQueue.global(qos: .userInitiated).async {
             do {
@@ -955,7 +972,7 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
                 print("Failed to perform image request: \(error)")
                 return
             }
-        }
+        }*/
     }
 
 	private func processsAudioSampleBuffer(_ sampleBuffer: CMSampleBuffer, fromOutput audioDataOutput: AVCaptureAudioDataOutput) {
