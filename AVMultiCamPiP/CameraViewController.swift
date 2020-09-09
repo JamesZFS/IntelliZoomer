@@ -833,7 +833,7 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
             print("Cannot get UIImage from data")
             return
         }
-        print("trying to save to library")
+        print("Photo saved!")
         UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
     }
     
@@ -858,7 +858,7 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
             return
         }
         
-        // Determine:
+        // MARK: Determine
         // - which camera the sample buffer came from
         if videoDataOutput == frontCameraVideoDataOutput {
             // recognize face & calc distance from front camera
@@ -880,81 +880,6 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
             // Ignore
             return
         }
-    }
-    
-    private var calibrationFactor: CGFloat = 0.5
-    @IBOutlet weak var calibrateButton: UIButton!
-    
-    private var currentDistance: CGFloat?
-    
-    @IBOutlet weak var distView: UITextField!
-    @IBOutlet weak var calDistView: UITextField!
-    
-    private var zoomRatioTemporalWindow = RingQueue<Float>.init(repeating: (minZoom + maxZoom) / 2, capacity: temporalWindowCapacity)
-    
-    
-    @IBOutlet weak var autoZoomSwitch: UISwitch!
-        
-    @IBAction func onCalibrate(_ sender: Any) {
-        // set calibrationFactor to make calDist ranging from 1 to 7
-        guard let distance = currentDistance else {
-            return
-        }
-        calibrationFactor = 1.0 / distance
-    }
-    
-    private var smileWindow = RingQueue<Int>(repeating: 0, capacity: 20)
-    
-    private func performVisionRequest(pixelBuffer: CVPixelBuffer) {
-        let faceDetector = CIDetector(ofType: CIDetectorTypeFace, context: nil, options: [
-            CIDetectorAccuracy: CIDetectorAccuracyHigh,
-            CIDetectorEyeBlink: true,
-            CIDetectorSmile: true
-         ])
-        let faces = faceDetector!.features(in: CIImage(cvPixelBuffer: pixelBuffer), options: [
-           CIDetectorAccuracy: CIDetectorAccuracyHigh,
-           CIDetectorEyeBlink: true,
-           CIDetectorSmile: true
-        ])
-        let face = faces.max(by: {
-            obj1, obj2 in return obj1.bounds.size.width * obj1.bounds.size.height < obj2.bounds.size.width * obj2.bounds.size.height
-        })
-        if let face = face as? CIFaceFeature {
-            let size = face.bounds.size.width * face.bounds.size.height * 3.7e-7;
-            if(face.hasSmile) {
-                smileWindow.push(1)
-                if(smileWindow.sum == 10) {
-                    capture()
-                }
-            } else {
-                smileWindow.push(0)
-            }
-            DispatchQueue.main.sync {
-                let distance = 1 / size
-                self.currentDistance = distance
-                self.distView.text! = String(format: "di: %.2f", distance)
-                
-                // calibrated distance should range from 1 to 7
-                let calDist = Float(self.calibrationFactor * distance)
-                self.calDistView.text! = String(format: "cd: %.1f", calDist)
-                self.zoomRatioTemporalWindow.push(lerp(clamp((calDist - 1.0) / 6.0), lower: minZoom, upper: maxZoom))
-                
-                if self.autoZoomSwitch.isOn {
-                    self.zoom = self.zoomRatioTemporalWindow.sum / Float(self.zoomRatioTemporalWindow.capacity)
-                }
-            }
-        }
-        else {
-            DispatchQueue.main.sync {
-                self.distView.text! = "No face"
-                self.calDistView.text! = ""
-                self.currentDistance = nil
-                return
-            }
-        }
-//        if face as? CIFaceFeature {
-//
-//        }
     }
 
 	private func processsAudioSampleBuffer(_ sampleBuffer: CMSampleBuffer, fromOutput audioDataOutput: AVCaptureAudioDataOutput) {
@@ -1286,5 +1211,26 @@ class ViewController: UIViewController, AVCaptureAudioDataOutputSampleBufferDele
                 print("error encoutered in zooming, \(error)")
             }
         }
+    }
+    
+    // MARK: IntelliZoomer member variables
+    
+    var calibrationFactor: CGFloat = 0.5
+    var currentDistance: CGFloat?
+    var accumulatedSmile: Float = 0
+    var accumulatedZoom: Float = (minZoom + maxZoom) / 2
+    var eyeBlinkDetector = EyeBlinkDetector()
+    
+    @IBOutlet weak var calibrateButton: UIButton!
+    @IBOutlet weak var distView: UITextField!
+    @IBOutlet weak var calDistView: UITextField!
+    @IBOutlet weak var debugTextView: UITextField!
+    @IBOutlet weak var autoZoomSwitch: UISwitch!
+    @IBAction func onCalibrate(_ sender: Any) {
+        // set calibrationFactor to make calDist ranging from 1 to 7
+        guard let distance = currentDistance else {
+            return
+        }
+        calibrationFactor = 1.0 / distance
     }
 }

@@ -8,11 +8,14 @@
 //  Global configurations:
 
 // subtle version:
-let minZoom: Float = 2.0
-let maxZoom: Float = 5.0
+//let minZoom: Float = 2.0
+//let maxZoom: Float = 5.0
 
 // fierce version:
-//let minZoom: Float = 1.0
-//let maxZoom: Float = 6.0
+let minZoom: Float = 1.0
+let maxZoom: Float = 6.0
 
 let temporalWindowCapacity: Int = 20
+
+let momentum: Float = 0.8
+let smileThreshold: Float = 0.5

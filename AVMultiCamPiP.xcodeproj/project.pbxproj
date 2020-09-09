@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		1A17824823A7695700E9A4EA /* defs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A17824723A7695700E9A4EA /* defs.swift */; };
 		1A17824A23A771DC00E9A4EA /* RingQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A17824923A771DC00E9A4EA /* RingQueue.swift */; };
+		1A4E85BB2508A977005DBE16 /* Zoomer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A4E85BA2508A977005DBE16 /* Zoomer.swift */; };
+		1A4E85BD2508BA27005DBE16 /* EyeBlinkDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A4E85BC2508BA27005DBE16 /* EyeBlinkDetector.swift */; };
 		26584C1D2282323E00ADA373 /* MovieRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26584C1C2282323E00ADA373 /* MovieRecorder.swift */; };
 		2673E41A227D0AB7008DB6F7 /* Utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2673E419227D0AB7008DB6F7 /* Utilities.swift */; };
 		42E159E2227A481B00F81016 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42E159E1227A481B00F81016 /* AppDelegate.swift */; };
@@ -23,9 +25,11 @@
 /* Begin PBXFileReference section */
 		1A17824723A7695700E9A4EA /* defs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = defs.swift; sourceTree = "<group>"; };
 		1A17824923A771DC00E9A4EA /* RingQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RingQueue.swift; sourceTree = "<group>"; };
+		1A4E85BA2508A977005DBE16 /* Zoomer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Zoomer.swift; sourceTree = "<group>"; };
+		1A4E85BC2508BA27005DBE16 /* EyeBlinkDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EyeBlinkDetector.swift; sourceTree = "<group>"; };
 		26584C1C2282323E00ADA373 /* MovieRecorder.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MovieRecorder.swift; sourceTree = "<group>"; };
 		2673E419227D0AB7008DB6F7 /* Utilities.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Utilities.swift; sourceTree = "<group>"; };
-		42E159DE227A481B00F81016 /* IZ(subtle).app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "IZ(subtle).app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		42E159DE227A481B00F81016 /* IntelliZoomer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = IntelliZoomer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		42E159E1227A481B00F81016 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		42E159E3227A481B00F81016 /* CameraViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraViewController.swift; sourceTree = "<group>"; };
 		42E159E6227A481B00F81016 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
@@ -63,7 +67,7 @@
 		42E159DF227A481B00F81016 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				42E159DE227A481B00F81016 /* IZ(subtle).app */,
+				42E159DE227A481B00F81016 /* IntelliZoomer.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -82,6 +86,8 @@
 				42E159E8227A481C00F81016 /* Assets.xcassets */,
 				42E159EA227A481C00F81016 /* LaunchScreen.storyboard */,
 				42E159ED227A481C00F81016 /* Info.plist */,
+				1A4E85BA2508A977005DBE16 /* Zoomer.swift */,
+				1A4E85BC2508BA27005DBE16 /* EyeBlinkDetector.swift */,
 			);
 			path = AVMultiCamPiP;
 			sourceTree = "<group>";
@@ -119,7 +125,7 @@
 			);
 			name = AVMultiCamPiP;
 			productName = AVMultiCamPiP;
-			productReference = 42E159DE227A481B00F81016 /* IZ(subtle).app */;
+			productReference = 42E159DE227A481B00F81016 /* IntelliZoomer.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -177,7 +183,9 @@
 			files = (
 				42E159E4227A481B00F81016 /* CameraViewController.swift in Sources */,
 				42E159E2227A481B00F81016 /* AppDelegate.swift in Sources */,
+				1A4E85BD2508BA27005DBE16 /* EyeBlinkDetector.swift in Sources */,
 				26584C1D2282323E00ADA373 /* MovieRecorder.swift in Sources */,
+				1A4E85BB2508A977005DBE16 /* Zoomer.swift in Sources */,
 				2673E41A227D0AB7008DB6F7 /* Utilities.swift in Sources */,
 				1A17824823A7695700E9A4EA /* defs.swift in Sources */,
 				42E15A12227A5CB800F81016 /* PreviewView.swift in Sources */,
@@ -335,14 +343,14 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = B5DT2ZJ5QZ;
+				DEVELOPMENT_TEAM = 6973LH5546;
 				INFOPLIST_FILE = AVMultiCamPiP/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = clarencewang.hello;
-				PRODUCT_NAME = "IZ(subtle)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.Tsinghua.Crest;
+				PRODUCT_NAME = IntelliZoomer;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -358,14 +366,14 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = B5DT2ZJ5QZ;
+				DEVELOPMENT_TEAM = 6973LH5546;
 				INFOPLIST_FILE = AVMultiCamPiP/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = clarencewang.hello;
-				PRODUCT_NAME = "IZ(subtle)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.Tsinghua.Crest;
+				PRODUCT_NAME = IntelliZoomer;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
