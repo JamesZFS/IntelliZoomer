@@ -33,19 +33,19 @@ extension ViewController {
         if let face = face as? CIFaceFeature {
             let size = face.bounds.size.width * face.bounds.size.height * 3.7e-7;
             // MARK: Eye blink to capture part
-            let closeVal: Float = face.leftEyeClosed && face.rightEyeClosed ? 1 : 0
-            if eyeBlinkDetector.detect(closeVal) {
-                capture()
-            }
-//            if face.hasSmile {
-//                let oldSmile = accumulatedSmile
-//                accumulatedSmile = lerp(momentum, lower: 1, upper: accumulatedSmile)
-//                if oldSmile < smileThreshold && accumulatedSmile >= smileThreshold { // detect positive edge
-//                    capture()
-//                }
-//            } else {
-//                accumulatedSmile = lerp(momentum, lower: 0, upper: accumulatedSmile)
+//            let closeVal: Float = face.leftEyeClosed && face.rightEyeClosed ? 1 : 0
+//            if eyeBlinkDetector.detect(closeVal) {
+//                capture()
 //            }
+            if face.hasSmile {
+                let oldSmile = accumulatedSmile
+                accumulatedSmile = lerp(momentum, lower: 1, upper: accumulatedSmile)
+                if oldSmile < smileThreshold && accumulatedSmile >= smileThreshold { // detect positive edge
+                    capture()
+                }
+            } else {
+                accumulatedSmile = lerp(momentum, lower: 0, upper: accumulatedSmile)
+            }
             // MARK: Auto zooming part
             let distance = 1 / size
             currentDistance = distance
@@ -60,13 +60,6 @@ extension ViewController {
                 self.zoom = accumulatedZoom
                 self.distView.text! = String(format: "di: %.2f", distance)
                 self.calDistView.text! = String(format: "cd: %.1f", calDist)
-                if face.leftEyeClosed && face.rightEyeClosed {
-                    self.debugTextView.text! = "Both eyes closed!"
-                } else if !face.leftEyeClosed && !face.rightEyeClosed {
-                    self.debugTextView.text! = "Both eyes open!"
-                } else {
-                    self.debugTextView.text! = "One eye closed!"
-                }
             }
         }
         else {

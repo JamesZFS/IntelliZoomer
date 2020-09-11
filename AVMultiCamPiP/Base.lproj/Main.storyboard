@@ -74,12 +74,6 @@
                                             <constraint firstAttribute="height" secondItem="iLU-Vt-ZWG" secondAttribute="width" multiplier="16:9" id="QG3-je-SN8"/>
                                         </constraints>
                                     </view>
-                                    <textField opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="LUJ-kh-bfz" userLabel="Debug View">
-                                        <rect key="frame" x="246" y="490" width="147" height="34"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                        <fontDescription key="fontDescription" type="system" pointSize="14"/>
-                                        <textInputTraits key="textInputTraits"/>
-                                    </textField>
                                 </subviews>
                                 <constraints>
                                     <constraint firstItem="iLU-Vt-ZWG" firstAttribute="width" secondItem="WOD-qV-bPs" secondAttribute="width" multiplier="0.25" id="00m-AS-gLI"/>
@@ -158,7 +152,6 @@
                         <outlet property="calDistView" destination="ndJ-HC-XvD" id="8se-fl-ARO"/>
                         <outlet property="calibrateButton" destination="dx3-tb-Wzv" id="g3o-WJ-MhN"/>
                         <outlet property="cameraUnavailableLabel" destination="MNA-vj-IrB" id="DHr-gt-WAW"/>
-                        <outlet property="debugTextView" destination="LUJ-kh-bfz" id="u9q-ad-iO9"/>
                         <outlet property="distView" destination="50J-at-4FE" id="XBY-i4-CyE"/>
                         <outlet property="frontCameraVideoPreviewView" destination="iLU-Vt-ZWG" id="b2V-KG-PHW"/>
                         <outlet property="recordButton" destination="SLg-cy-w81" id="VQn-Ok-V1i"/>

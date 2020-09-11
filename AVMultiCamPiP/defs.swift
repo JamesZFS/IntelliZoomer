@@ -17,5 +17,5 @@ let maxZoom: Float = 6.0
 
 let temporalWindowCapacity: Int = 20
 
-let momentum: Float = 0.8
+let momentum: Float = 0.9
 let smileThreshold: Float = 0.5
